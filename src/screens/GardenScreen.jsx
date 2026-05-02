@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Users, LogOut, Globe } from "lucide-react";
+import { Users, LogOut, Settings } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GardenWorld, WORLD } from "../components/GardenWorld";
 import { QuizModal, buildQuiz } from "../components/QuizModal";
@@ -10,7 +10,7 @@ import { useCurrentUser } from "../hooks/useUser";
 import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
 
-export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onEditLangs, pendingPlant, onClearPending }) {
+export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, pendingPlant, onClearPending }) {
   const { data: fetchedUser } = useCurrentUser();
   const user = authUser ?? fetchedUser;
   const queryClient = useQueryClient();
@@ -187,7 +187,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         <div className="sign"><h1>{user?.name ?? "Garden"}'s Garden</h1></div>
         <div style={{ flex: 1 }} />
         <button className="icon-btn" onClick={onVisit}><Users size={15} strokeWidth={2} /></button>
-        <button className="icon-btn" onClick={onEditLangs}><Globe size={15} strokeWidth={2} /></button>
+        <button className="icon-btn" onClick={onOpenSettings}><Settings size={15} strokeWidth={2} /></button>
         <button className="icon-btn" onClick={() => setShowLogoutConfirm(true)}><LogOut size={15} strokeWidth={2} /></button>
       </div>
 

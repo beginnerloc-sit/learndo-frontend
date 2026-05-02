@@ -13,6 +13,9 @@ function norm(u) {
     plantsCount: u.plants_count,
     visitsCount: u.visits_count,
     langPrefs: u.lang_prefs ?? [],
+    vocabLevel: u.vocab_level ?? null,
+    topicPrefs: u.topic_prefs ?? [],
+    definitionLang: u.definition_lang ?? "english",
     collectionLocked: !!u.collection_locked,
   };
 }
@@ -43,6 +46,21 @@ export async function updateLangPrefs(langs) {
     body: JSON.stringify({ langs }),
   });
   if (!res.ok) throw new Error("Failed to update preferences");
+  return norm(await res.json());
+}
+
+export async function updateSettings({ langs, vocabLevel, topicPrefs, definitionLang } = {}) {
+  const body = {};
+  if (langs           !== undefined) body.langs            = langs;
+  if (vocabLevel      !== undefined) body.vocab_level      = vocabLevel;
+  if (topicPrefs      !== undefined) body.topic_prefs      = topicPrefs;
+  if (definitionLang  !== undefined) body.definition_lang  = definitionLang;
+  const res = await fetch(`${BASE}/users/me/settings`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error("Failed to save settings");
   return norm(await res.json());
 }
 

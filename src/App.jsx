@@ -6,7 +6,7 @@ import { LessonScreen } from "./screens/LessonScreen";
 import { VisitScreen } from "./screens/VisitScreen";
 import { LeaderboardScreen } from "./screens/LeaderboardScreen";
 import { AuthScreen } from "./screens/AuthScreen";
-import { LangPickerScreen } from "./screens/LangPickerScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
 import { getStoredAuth, saveAuth, clearAuth } from "./api/auth";
 
 const queryClient = new QueryClient({
@@ -18,26 +18,40 @@ function AppShell() {
   const [tab, setTab] = useState("garden");
   const [visitFriend, setVisitFriend] = useState(null);
   const [pendingPlant, setPendingPlant] = useState(null);
-  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   if (!auth) {
     return <AuthScreen onAuth={(a) => { setAuth(a); setTab("garden"); }} />;
   }
 
-  // First login: no language prefs set yet
-  const needsLangSetup = !auth.user?.lang_prefs?.length;
-  if (needsLangSetup || showLangPicker) {
+  // First login: settings haven't been completed (no langs OR no vocab level chosen)
+  const needsSetup = !auth.user?.lang_prefs?.length || !auth.user?.vocab_level;
+  if (needsSetup || showSettings) {
     return (
-      <LangPickerScreen
-        initial={auth.user?.lang_prefs ?? []}
-        canSkip={showLangPicker && !needsLangSetup}
+      <SettingsScreen
+        initial={{
+          langPrefs:      auth.user?.lang_prefs ?? [],
+          vocabLevel:     auth.user?.vocab_level ?? "",
+          topicPrefs:     auth.user?.topic_prefs ?? [],
+          definitionLang: auth.user?.definition_lang ?? "english",
+        }}
+        canSkip={showSettings && !needsSetup}
         onDone={(updatedUser) => {
           if (updatedUser) {
-            const newAuth = { ...auth, user: { ...auth.user, lang_prefs: updatedUser.langPrefs } };
+            const newAuth = {
+              ...auth,
+              user: {
+                ...auth.user,
+                lang_prefs:      updatedUser.langPrefs,
+                vocab_level:     updatedUser.vocabLevel,
+                topic_prefs:     updatedUser.topicPrefs,
+                definition_lang: updatedUser.definitionLang,
+              },
+            };
             saveAuth(newAuth);
             setAuth(newAuth);
           }
-          setShowLangPicker(false);
+          setShowSettings(false);
         }}
       />
     );
@@ -66,7 +80,7 @@ function AppShell() {
           onVisit={() => setTab("leaderboard")}
           onLeaderboard={() => setTab("leaderboard")}
           onLogout={logout}
-          onEditLangs={() => setShowLangPicker(true)}
+          onOpenSettings={() => setShowSettings(true)}
           pendingPlant={pendingPlant}
           onClearPending={() => setPendingPlant(null)}
         />

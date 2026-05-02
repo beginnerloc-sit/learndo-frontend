@@ -414,6 +414,75 @@ button { font-family: var(--font-body); }
 .quiz-foot .msg.right { color: #3e6534; }
 .quiz-foot .msg.wrong { color: #a83a4a; }
 
+/* Rearrange quiz */
+.quiz-rearrange-meaning {
+  font-family: "Caprasimo", serif; font-size: 16px; color: #1c2c19;
+  line-height: 1.3; margin-top: 6px;
+}
+.rearrange-answer {
+  /* min-height is set inline based on number of correct tokens — never collapses */
+  padding: 10px;
+  background: #fffef6; border: 2.5px dashed #b89260; border-radius: 14px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-items: flex-start; align-content: flex-start;
+  margin: 10px 0 8px;
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
+  touch-action: none;          /* prevent page scroll while dragging */
+  user-select: none;
+}
+.rearrange-answer.drop-active { background: #f0fae0; border-color: #5a9333; }
+.rearrange-answer.right { background: #c8e6a8; border-color: #2b3f1a; border-style: solid; }
+.rearrange-answer.wrong { background: #f8d4cc; border-color: #a83a4a; border-style: solid; }
+.rearrange-answer .placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #a08660; font-size: 12px; font-style: italic;
+  font-family: "Lilita One", sans-serif; pointer-events: none;
+  text-align: center; padding: 0 12px;
+}
+.rearrange-bank {
+  min-height: 50px; padding: 10px;
+  background: #fffbe9; border: 1.5px solid #d6b167; border-radius: 14px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-content: flex-start;
+  transition: background 0.2s, border-color 0.2s;
+  touch-action: none; user-select: none;
+}
+.rearrange-bank.drop-active { background: #fff5d6; border-color: #c89a2e; }
+.rearrange-bank .sent-chip:disabled,
+.rearrange-answer .sent-chip:disabled { opacity: 0.7; cursor: default; }
+
+/* Smooth slide for chips when neighbours reorder */
+.rearrange-answer .sent-chip,
+.rearrange-bank   .sent-chip {
+  transition: transform 0.18s ease, opacity 0.15s, background 0.15s;
+  cursor: grab;
+  touch-action: none;
+}
+.rearrange-answer .sent-chip:active,
+.rearrange-bank   .sent-chip:active { cursor: grabbing; }
+
+/* Source chip becomes invisible (preserves layout) while a ghost flies */
+.sent-chip.ghost {
+  opacity: 0.18;
+  filter: grayscale(40%);
+  cursor: grabbing;
+}
+
+/* The floating ghost that follows the pointer */
+.sent-chip.drag-ghost {
+  position: fixed; z-index: 200; pointer-events: none;
+  background: #fff5d6; border: 2px solid #5a3e1a; color: #1c2c19;
+  font-family: "Caprasimo", serif; font-size: 13px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 5px 11px;
+  box-shadow: 0 6px 18px -2px rgba(40,30,12,0.5), 0 2px 0 #5a3e1a;
+  transform: scale(1.06) rotate(-2deg);
+  transition: transform 0.08s;
+}
+
 /* Sentence builder */
 .modal.sentence { max-width: 330px; }
 .sentence-box { min-height: 50px; padding: 10px; background: #f3ecdc; border: 2px dashed #b89260; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-content: center; }
@@ -1216,7 +1285,75 @@ button { font-family: var(--font-body); }
 }
 .visit-gift-btn:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 2px 0 #5a3e1a; }
 
-/* ── Language Picker ─────────────────────────────────────────────────────── */
+/* ── Settings screen ─────────────────────────────────────────────────────── */
+.settings-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(120% 60% at 50% 0%, #c8e8f5 0%, #d8edd2 30%, #b0d28f 65%, #8db867 100%);
+}
+.settings-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 50px 12px 8px;
+  flex-shrink: 0;
+}
+.settings-body {
+  flex: 1; overflow-y: auto;
+  padding: 6px 14px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.settings-body::-webkit-scrollbar { width: 4px; }
+.settings-body::-webkit-scrollbar-thumb { background: rgba(90,62,26,0.3); border-radius: 4px; }
+.settings-section {
+  background: linear-gradient(180deg, #fffdf5 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 18px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 14px -4px rgba(40,30,12,0.25);
+  padding: 12px 14px;
+}
+.settings-section h3 {
+  font-family: "Lilita One", sans-serif; font-size: 15px; font-weight: 400;
+  color: #1c2c19; margin: 0 0 2px;
+  letter-spacing: 0.02em;
+}
+.settings-section .hint {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #8a6a3a; letter-spacing: 0.04em; margin: 0 0 10px;
+}
+.settings-grid {
+  display: grid; grid-template-columns: 1fr; gap: 6px;
+}
+.settings-grid.two-col   { grid-template-columns: 1fr 1fr; }
+.settings-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
+.settings-option {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 10px; border-radius: 12px;
+  border: 2px solid #ddd3b8;
+  background: #faf6ec; cursor: pointer;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  color: #4a3a1a; transition: all 0.12s; position: relative;
+  text-align: left; line-height: 1.15;
+}
+.settings-option:hover:not(:disabled) { border-color: #a07040; background: #f5edd8; }
+.settings-option.selected {
+  border-color: #3e6534; background: #e8f5e2; color: #1c4a10;
+  box-shadow: 0 2px 0 #3e6534;
+}
+.settings-option.maxed { opacity: 0.4; cursor: not-allowed; }
+.settings-option.level { padding: 11px 12px; }
+.settings-option.topic { font-size: 11px; padding: 8px 6px; justify-content: center; }
+.settings-option .opt-emoji { font-size: 18px; line-height: 1; flex-shrink: 0; }
+.settings-option .opt-emoji.big { font-size: 26px; }
+.settings-option .opt-label { flex: 1; }
+.settings-option .opt-stack { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.settings-option .opt-hint {
+  font-family: "Plus Jakarta Sans", sans-serif; font-size: 10px;
+  color: #6e4e2c; font-weight: 500;
+}
+.settings-option .opt-check {
+  font-size: 11px; color: #3e6534; font-weight: bold; flex-shrink: 0;
+}
+
+/* ── Language Picker (legacy, still used as a smaller picker) ─────────────── */
 .lang-picker-wrap {
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(160deg, #d4eecc 0%, #b8e0b0 100%);
