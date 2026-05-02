@@ -8,6 +8,7 @@ import { LeaderboardScreen } from "./screens/LeaderboardScreen";
 import { AuthScreen } from "./screens/AuthScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { getStoredAuth, saveAuth, clearAuth } from "./api/auth";
+import { useBackgroundMusic } from "./hooks/useBackgroundMusic";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -19,6 +20,7 @@ function AppShell() {
   const [visitFriend, setVisitFriend] = useState(null);
   const [pendingPlant, setPendingPlant] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const { muted, toggleMute } = useBackgroundMusic();
 
   if (!auth) {
     return <AuthScreen onAuth={(a) => { setAuth(a); setTab("garden"); }} />;
@@ -81,6 +83,8 @@ function AppShell() {
           onLeaderboard={() => setTab("leaderboard")}
           onLogout={logout}
           onOpenSettings={() => setShowSettings(true)}
+          musicMuted={muted}
+          onToggleMusic={toggleMute}
           pendingPlant={pendingPlant}
           onClearPending={() => setPendingPlant(null)}
         />

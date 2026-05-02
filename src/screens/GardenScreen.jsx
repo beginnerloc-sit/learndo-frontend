@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Users, LogOut, Settings } from "lucide-react";
+import { Users, LogOut, Settings, Music, VolumeX } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GardenWorld, WORLD } from "../components/GardenWorld";
 import { QuizModal, buildQuiz } from "../components/QuizModal";
@@ -10,7 +10,7 @@ import { useCurrentUser } from "../hooks/useUser";
 import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
 
-export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, pendingPlant, onClearPending }) {
+export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, musicMuted, onToggleMusic, pendingPlant, onClearPending }) {
   const { data: fetchedUser } = useCurrentUser();
   const user = authUser ?? fetchedUser;
   const queryClient = useQueryClient();
@@ -43,6 +43,8 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [showCollection, setShowCollection] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showPendingGifts, setShowPendingGifts] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef({ startX: 0, startY: 0, moved: false, hideTimer: null });
 
   // Load garden plants from DB once
   useEffect(() => {
@@ -187,12 +189,49 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         <div className="sign"><h1>{user?.name ?? "Garden"}'s Garden</h1></div>
         <div style={{ flex: 1 }} />
         <button className="icon-btn" onClick={onVisit}><Users size={15} strokeWidth={2} /></button>
+        <button className="icon-btn" onClick={onToggleMusic} title={musicMuted ? "Unmute music" : "Mute music"}>
+          {musicMuted ? <VolumeX size={15} strokeWidth={2} /> : <Music size={15} strokeWidth={2} />}
+        </button>
         <button className="icon-btn" onClick={onOpenSettings}><Settings size={15} strokeWidth={2} /></button>
         <button className="icon-btn" onClick={() => setShowLogoutConfirm(true)}><LogOut size={15} strokeWidth={2} /></button>
       </div>
 
       {/* Pannable stage */}
-      <div className={`stage${planting ? " planting" : ""}`} ref={vpRef} onClick={(e) => { if (e.target === e.currentTarget) setPressed(null); }}>
+      <div
+        className={`stage${planting ? " planting" : ""}`}
+        ref={vpRef}
+        onClick={(e) => { if (e.target === e.currentTarget) setPressed(null); }}
+        onPointerDown={(e) => {
+          dragStateRef.current.startX = e.clientX;
+          dragStateRef.current.startY = e.clientY;
+          dragStateRef.current.moved = false;
+          if (dragStateRef.current.hideTimer) {
+            clearTimeout(dragStateRef.current.hideTimer);
+            dragStateRef.current.hideTimer = null;
+          }
+        }}
+        onPointerMove={(e) => {
+          if (dragStateRef.current.moved) return;
+          const dx = e.clientX - dragStateRef.current.startX;
+          const dy = e.clientY - dragStateRef.current.startY;
+          if (Math.hypot(dx, dy) > 6) {
+            dragStateRef.current.moved = true;
+            setIsDragging(true);
+          }
+        }}
+        onPointerUp={() => {
+          if (dragStateRef.current.moved) {
+            dragStateRef.current.hideTimer = setTimeout(() => setIsDragging(false), 900);
+          }
+          dragStateRef.current.moved = false;
+        }}
+        onPointerCancel={() => {
+          if (dragStateRef.current.moved) {
+            dragStateRef.current.hideTimer = setTimeout(() => setIsDragging(false), 900);
+          }
+          dragStateRef.current.moved = false;
+        }}
+      >
         <GardenWorld
           vpRef={vpRef}
           pressed={pressed}
@@ -269,8 +308,8 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         })()}
       </div>
 
-      {/* Minimap */}
-      <div className="minimap">
+      {/* Minimap — only visible while panning */}
+      <div className={`minimap${isDragging ? " visible" : ""}`}>
         <div className="vp" style={{ left: vpL, top: vpT, width: vpW, height: vpH }} />
         {plantedSeeds.map(s => (
           <div key={s.id} style={{
