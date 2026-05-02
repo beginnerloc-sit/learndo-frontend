@@ -12,7 +12,7 @@ function shuffle(arr) {
 
 const QUIZ_PROMPTS = {
   meaning:    "What does this mean?",
-  fill_blank: "Fill in the blank",
+  fill_blank: "Which meaning fits the blank?",
   synonym:    "Which word means the same?",
   antonym:    "Which word means the opposite?",
 };

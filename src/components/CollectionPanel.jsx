@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Lock, Unlock } from "lucide-react";
+import { X, Lock, Unlock, SlidersHorizontal } from "lucide-react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchCollection } from "../api/leaderboard";
 import { updateCollectionLock } from "../api/users";
@@ -42,6 +42,19 @@ const REACT_CLASS = {
   "💕": "react-heart",
   "🌈": "react-rainbow",
 };
+
+const LANG_FILTERS = [
+  { name: "English",    color: "#5a9eb8" },
+  { name: "Spanish",    color: "#c1325a" },
+  { name: "Japanese",   color: "#b53a6a" },
+  { name: "Chinese",    color: "#d97a3e" },
+  { name: "French",     color: "#d4812a" },
+  { name: "German",     color: "#5a3e8e" },
+  { name: "Italian",    color: "#3e6534" },
+  { name: "Vietnamese", color: "#d4267a" },
+];
+
+const REACTION_FILTERS = ["🌸", "💧", "✨", "🌟", "💕", "🌈"];
 
 function HarvestCard({ item }) {
   const [flipped, setFlipped] = React.useState(false);
@@ -113,6 +126,9 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
   const friendId = friend?.id ?? null;
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [langFilter, setLangFilter] = React.useState("");
+  const [reactionFilter, setReactionFilter] = React.useState("");
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [locked, setLocked] = React.useState(currentUser?.collection_locked ?? currentUser?.collectionLocked ?? false);
   const [lockBusy, setLockBusy] = React.useState(false);
   const qc = useQueryClient();
@@ -130,9 +146,9 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
     isLoading,
     error,
   } = useInfiniteQuery({
-    queryKey: ["collection", friendId ?? "me", debouncedSearch],
+    queryKey: ["collection", friendId ?? "me", debouncedSearch, langFilter, reactionFilter],
     queryFn: ({ pageParam = 0 }) =>
-      fetchCollection({ q: debouncedSearch, skip: pageParam, limit: PAGE_SIZE, userId: friendId }),
+      fetchCollection({ q: debouncedSearch, skip: pageParam, limit: PAGE_SIZE, userId: friendId, lang: langFilter, reaction: reactionFilter }),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === PAGE_SIZE
         ? allPages.reduce((n, p) => n + p.length, 0)
@@ -185,13 +201,57 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
       </div>
 
       {!isLocked && (
-        <input
-          className="collection-search"
-          type="text"
-          placeholder="Search your harvested words…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+        <div className="collection-searchbar">
+          <input
+            className="collection-search"
+            type="text"
+            placeholder="Search your harvested words…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <button
+            className={`collection-filter-toggle${filtersOpen ? " open" : ""}${(langFilter || reactionFilter) ? " has-active" : ""}`}
+            onClick={() => setFiltersOpen(v => !v)}
+            title="Filter"
+          >
+            <SlidersHorizontal size={14} strokeWidth={2.5} />
+            {(!!langFilter + !!reactionFilter) > 0 && (
+              <span className="filter-badge">{!!langFilter + !!reactionFilter}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {!isLocked && filtersOpen && (
+        <div className="collection-filters">
+          <div className="filter-row">
+            <button
+              className={`filter-pill${!langFilter ? " active" : ""}`}
+              onClick={() => setLangFilter("")}
+            >ALL</button>
+            {LANG_FILTERS.map(l => (
+              <button
+                key={l.name}
+                className={`filter-pill${langFilter === l.name ? " active" : ""}`}
+                style={langFilter === l.name ? { background: l.color, borderColor: l.color, color: "#fff" } : { color: l.color, borderColor: l.color + "88" }}
+                onClick={() => setLangFilter(langFilter === l.name ? "" : l.name)}
+              >{l.name.slice(0, 3).toUpperCase()}</button>
+            ))}
+          </div>
+          <div className="filter-row">
+            <button
+              className={`filter-pill${!reactionFilter ? " active" : ""}`}
+              onClick={() => setReactionFilter("")}
+            >ALL</button>
+            {REACTION_FILTERS.map(emoji => (
+              <button
+                key={emoji}
+                className={`filter-pill emoji${reactionFilter === emoji ? " active" : ""}`}
+                onClick={() => setReactionFilter(reactionFilter === emoji ? "" : emoji)}
+              >{emoji}</button>
+            ))}
+          </div>
+        </div>
       )}
 
       {isLocked && (
@@ -210,8 +270,12 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
 
       {!isLocked && !isLoading && items.length === 0 && (
         <div className="collection-empty">
-          <div className="big">🌱</div>
-          <p>{isFriend ? `${friend.name} hasn't harvested anything yet.` : "HARVEST STAGE 5 PLANTS TO COLLECT WORDS"}</p>
+          <div className="big">{(langFilter || reactionFilter || debouncedSearch) ? "🔍" : "🌱"}</div>
+          <p>
+            {(langFilter || reactionFilter || debouncedSearch)
+              ? "No words match these filters."
+              : (isFriend ? `${friend.name} hasn't harvested anything yet.` : "HARVEST STAGE 5 PLANTS TO COLLECT WORDS")}
+          </p>
         </div>
       )}
 

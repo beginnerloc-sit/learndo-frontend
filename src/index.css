@@ -501,15 +501,85 @@ button { font-family: var(--font-body); }
   margin-top: 3px;
 }
 
-/* Search input — cream with brown border, sits below the header plank */
+/* Search bar — input + filter toggle side-by-side */
+.collection-searchbar {
+  display: flex; gap: 6px; align-items: center;
+  margin: 8px 12px 6px; flex-shrink: 0;
+}
 .collection-search {
-  margin: 8px 12px 6px; padding: 8px 14px;
+  flex: 1; min-width: 0;
+  padding: 8px 14px;
   background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
   border: 2px solid #5a3e1a; border-radius: 999px;
   color: #3e2a16; font-size: 13px;
   font-family: "Lilita One", sans-serif; letter-spacing: 0.02em;
   box-shadow: 0 2px 0 #5a3e1a, inset 0 1px 0 rgba(255,255,255,0.5);
-  outline: none; flex-shrink: 0;
+  outline: none;
+}
+.collection-filter-toggle {
+  position: relative;
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  color: #3e2a16; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 0 #5a3e1a;
+  transition: transform 0.08s;
+}
+.collection-filter-toggle:active { transform: translateY(1px); box-shadow: 0 1px 0 #5a3e1a; }
+.collection-filter-toggle.open,
+.collection-filter-toggle.has-active {
+  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
+  border-color: #2b3f1a; color: #fff;
+  box-shadow: 0 2px 0 #2b3f1a;
+}
+.filter-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  background: #b53a6a; color: #fff;
+  border: 1.5px solid #fffbe9; border-radius: 999px;
+  font-family: "Lilita One", sans-serif; font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+/* Filter pill rows — horizontal scroll, scoped to viewport width */
+.collection-filters {
+  display: flex; flex-direction: column; gap: 4px;
+  margin: 0 0 4px; flex-shrink: 0;
+}
+.filter-row {
+  display: flex; gap: 5px; padding: 0 12px 4px;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-pill {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 1.5px solid #b89260; border-radius: 999px;
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #6e4e2c; letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(90,62,26,0.4);
+  transition: transform 0.08s;
+  line-height: 1.4;
+}
+.filter-pill.emoji {
+  padding: 3px 8px; font-size: 13px; letter-spacing: 0;
+}
+.filter-pill.active {
+  background: linear-gradient(180deg, #5a9333 0%, #3e6534 100%);
+  border-color: #2b3f1a; color: #fff;
+  box-shadow: 0 1px 0 #2b3f1a;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+.filter-pill:active:not(.active) { transform: translateY(1px); box-shadow: none; }
+.filter-pill.emoji.active {
+  background: linear-gradient(180deg, #f3c14a 0%, #c89a2e 100%);
+  border-color: #6e4e0e;
+  filter: drop-shadow(0 0 4px rgba(243,193,74,0.6));
 }
 .collection-search::placeholder { color: #b09070; }
 .collection-search:focus { border-color: #3e6534; box-shadow: 0 2px 0 #2b3f1a, inset 0 1px 0 rgba(255,255,255,0.5); }

@@ -28,11 +28,13 @@ export async function harvestPlant(plantId) {
   return res.json();
 }
 
-export async function fetchCollection({ q = "", skip = 0, limit = 20, userId = null } = {}) {
+export async function fetchCollection({ q = "", skip = 0, limit = 20, userId = null, lang = "", reaction = "" } = {}) {
   const params = new URLSearchParams({ limit });
   if (q.trim()) params.set("q", q.trim());
   if (skip > 0) params.set("skip", skip);
   if (userId) params.set("user_id", userId);
+  if (lang) params.set("lang", lang);
+  if (reaction) params.set("reaction", reaction);
   const res = await fetch(`${BASE}/garden/collection?${params}`, { headers: authHeader() });
   if (res.status === 403) throw new Error("LOCKED");
   if (!res.ok) throw new Error("Failed to fetch collection");
