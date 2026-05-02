@@ -1,7 +1,8 @@
 import React from "react";
-import { X } from "lucide-react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { X, Lock, Unlock } from "lucide-react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchCollection } from "../api/leaderboard";
+import { updateCollectionLock } from "../api/users";
 import { wordTheme } from "../utils/wordTheme";
 
 const PAGE_SIZE = 20;
@@ -33,9 +34,88 @@ function fmtDate(iso) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function CollectionPanel({ onClose }) {
+const REACT_CLASS = {
+  "🌸": "react-cherry",
+  "💧": "react-drop",
+  "✨": "react-sparkle",
+  "🌟": "react-star",
+  "💕": "react-heart",
+  "🌈": "react-rainbow",
+};
+
+function HarvestCard({ item }) {
+  const [flipped, setFlipped] = React.useState(false);
+  const theme = wordTheme(item.word);
+  const reaction = item.reactions?.[0];
+  const reactClass = reaction ? (REACT_CLASS[reaction.emoji] || "") : "";
+  return (
+    <button
+      className={[
+        "harvest-card",
+        flipped ? "flipped" : "",
+        reaction ? "has-reaction" : "",
+        reactClass,
+      ].filter(Boolean).join(" ")}
+      onClick={() => setFlipped(f => !f)}
+      type="button"
+    >
+      <div className="harvest-card-inner">
+        {/* Front — plant + word only */}
+        <div className="harvest-face harvest-front">
+          <img
+            className="harvest-sprite"
+            src={`/assets/garden/${spriteFor(item.word)}.png`}
+            alt={item.word}
+          />
+          <span
+            className="harvest-front-word"
+            style={{
+              color: theme.color,
+              fontFamily: theme.fontFamily,
+              fontStyle: theme.fontStyle,
+              fontWeight: theme.fontWeight,
+              letterSpacing: theme.letterSpacing,
+            }}
+          >
+            {item.word}
+          </span>
+          {reaction && (
+            <span className="harvest-front-react" title={`from ${reaction.from_name}`}>
+              {reaction.emoji}
+            </span>
+          )}
+        </div>
+
+        {/* Back — full info */}
+        <div className="harvest-face harvest-back">
+          <span
+            className="lang-tag"
+            style={{
+              background: item.lang_color + "33",
+              color: item.lang_color,
+              borderColor: item.lang_color + "66",
+            }}
+          >
+            {item.lang.toUpperCase()}
+          </span>
+          <div className="harvest-back-word">{item.word}</div>
+          {item.ipa && <div className="harvest-ipa">/{item.ipa}/</div>}
+          {item.gloss && <div className="harvest-gloss">{item.gloss}</div>}
+          <div className="harvest-date">🌸 {fmtDate(item.harvested_at)}</div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+export function CollectionPanel({ onClose, friend = null, currentUser = null, onLockChange }) {
+  const isFriend = !!friend;
+  const friendId = friend?.id ?? null;
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [locked, setLocked] = React.useState(currentUser?.collection_locked ?? currentUser?.collectionLocked ?? false);
+  const [lockBusy, setLockBusy] = React.useState(false);
+  const qc = useQueryClient();
 
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -48,90 +128,100 @@ export function CollectionPanel({ onClose }) {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    error,
   } = useInfiniteQuery({
-    queryKey: ["collection", debouncedSearch],
+    queryKey: ["collection", friendId ?? "me", debouncedSearch],
     queryFn: ({ pageParam = 0 }) =>
-      fetchCollection({ q: debouncedSearch, skip: pageParam, limit: PAGE_SIZE }),
+      fetchCollection({ q: debouncedSearch, skip: pageParam, limit: PAGE_SIZE, userId: friendId }),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === PAGE_SIZE
         ? allPages.reduce((n, p) => n + p.length, 0)
         : undefined,
     staleTime: 30 * 1000,
+    retry: false,
   });
 
+  const isLocked = error?.message === "LOCKED";
   const items = data?.pages.flat() ?? [];
+
+  const toggleLock = async () => {
+    if (lockBusy) return;
+    setLockBusy(true);
+    try {
+      const updated = await updateCollectionLock(!locked);
+      setLocked(updated.collectionLocked);
+      onLockChange?.(updated.collectionLocked);
+      qc.invalidateQueries({ queryKey: ["currentUser"] });
+    } catch {
+      // ignore
+    } finally {
+      setLockBusy(false);
+    }
+  };
+
+  const title = isFriend ? `${friend.name}'s Collection` : "My Collection";
 
   return (
     <div className="collection-panel">
       <div className="collection-header">
         <div className="collection-title">
-          <h2>My Collection</h2>
+          <h2>{title}</h2>
           <div className="sub">
-            {items.length} {debouncedSearch ? "RESULTS" : "WORDS HARVESTED"}
-            {hasNextPage ? " · MORE" : ""}
+            {isLocked ? "PRIVATE" : `${items.length} ${debouncedSearch ? "RESULTS" : "WORDS HARVESTED"}`}
+            {!isLocked && hasNextPage ? " · MORE" : ""}
           </div>
         </div>
-        <input
-          className="collection-search"
-          type="text"
-          placeholder="Search…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+        {!isFriend && (
+          <button
+            className={`collection-lock-btn${locked ? " locked" : ""}`}
+            onClick={toggleLock}
+            disabled={lockBusy}
+            title={locked ? "Collection is private — tap to make public" : "Collection is public — tap to make private"}
+          >
+            {locked ? <Lock size={15} strokeWidth={2.5} /> : <Unlock size={15} strokeWidth={2.5} />}
+          </button>
+        )}
         <button className="collection-close" onClick={onClose}><X size={16} strokeWidth={2.5} /></button>
       </div>
 
-      {isLoading && (
+      {!isLocked && (
+        <input
+          className="collection-search"
+          type="text"
+          placeholder="Search your harvested words…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      )}
+
+      {isLocked && (
+        <div className="collection-empty">
+          <div className="big">🔒</div>
+          <p>{friend?.name ?? "This user"} keeps their collection private.</p>
+        </div>
+      )}
+
+      {!isLocked && isLoading && (
         <div className="collection-empty">
           <div className="big">⏳</div>
           <p>Loading…</p>
         </div>
       )}
 
-      {!isLoading && items.length === 0 && (
+      {!isLocked && !isLoading && items.length === 0 && (
         <div className="collection-empty">
           <div className="big">🌱</div>
-          <p>HARVEST STAGE 5 PLANTS TO COLLECT WORDS</p>
+          <p>{isFriend ? `${friend.name} hasn't harvested anything yet.` : "HARVEST STAGE 5 PLANTS TO COLLECT WORDS"}</p>
         </div>
       )}
 
-      {!isLoading && items.length > 0 && (
-        <div className="collection-list">
-          {items.map(item => {
-            const theme = wordTheme(item.word);
-            return (
-              <div key={item.id} className="harvest-card">
-                <div className="harvest-plant">
-                  <img
-                    className="harvest-sprite"
-                    src={`/assets/garden/${spriteFor(item.word)}.png`}
-                    alt={item.word}
-                  />
-                  <div className="harvest-plant-label">
-                    <span
-                      className="harvest-plant-word"
-                      style={{ color: theme.color, fontFamily: theme.fontFamily, fontStyle: theme.fontStyle, fontWeight: theme.fontWeight, letterSpacing: theme.letterSpacing }}
-                    >
-                      {item.word}
-                    </span>
-                    {item.reactions?.[0] && (
-                      <span className="harvest-compliment" title={`from ${item.reactions[0].from_name}`}>
-                        {item.reactions[0].emoji}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="harvest-info">
-                  <span className="lang-tag" style={{ background: item.lang_color + "33", color: item.lang_color, borderColor: item.lang_color + "66" }}>
-                    {item.lang.toUpperCase()}
-                  </span>
-                  {item.ipa && <div className="harvest-ipa">/{item.ipa}/</div>}
-                  {item.gloss && <div className="harvest-gloss">{item.gloss}</div>}
-                  <div className="harvest-date">🌸 Harvested {fmtDate(item.harvested_at)}</div>
-                </div>
-              </div>
-            );
-          })}
+      {!isLocked && !isLoading && items.length > 0 && (
+        <>
+          <div className="collection-grid">
+            {items.map(item => (
+              <HarvestCard key={item.id} item={item} />
+            ))}
+          </div>
           {hasNextPage && (
             <button
               className="collection-load-more"
@@ -141,7 +231,7 @@ export function CollectionPanel({ onClose }) {
               {isFetchingNextPage ? "Loading…" : "Load more"}
             </button>
           )}
-        </div>
+        </>
       )}
     </div>
   );

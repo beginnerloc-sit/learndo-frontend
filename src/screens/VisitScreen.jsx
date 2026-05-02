@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, BookOpen } from "lucide-react";
 import { GardenWorld } from "../components/GardenWorld";
 import { QuizModal, buildQuiz } from "../components/QuizModal";
 import { GiftPickerPanel } from "../components/GiftPickerPanel";
+import { CollectionPanel } from "../components/CollectionPanel";
 import { useVocabulary } from "../hooks/useVocabulary";
 import { fetchWordQuiz } from "../api/vocabulary";
 import { reactToPlant } from "../api/leaderboard";
@@ -20,6 +21,7 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
   const [quizTarget, setQuizTarget] = useState(null);
   const [translateLoading, setTranslateLoading] = useState(false);
   const [showGift, setShowGift] = useState(false);
+  const [showCollection, setShowCollection] = useState(false);
 
   const { data: gardenPlants } = useVocabulary(friend?.id);
 
@@ -163,6 +165,9 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
         <div style={{ flex: 1 }} />
         <div className="sign"><h1>🌸 {name}'s Garden</h1></div>
         <div style={{ flex: 1 }} />
+        <button className="icon-btn" onClick={() => setShowCollection(true)} title={`View ${name}'s collection`}>
+          <BookOpen size={15} strokeWidth={2.5} />
+        </button>
         <div className="pill">
           <span className="ic">🔥</span>{friend?.streak ?? 0}d
         </div>
@@ -198,6 +203,10 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
 
       {showGift && (
         <GiftPickerPanel friend={friend} onClose={() => setShowGift(false)} />
+      )}
+
+      {showCollection && (
+        <CollectionPanel friend={friend} onClose={() => setShowCollection(false)} />
       )}
 
       {visitQuiz && (

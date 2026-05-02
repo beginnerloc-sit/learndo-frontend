@@ -369,7 +369,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           </div>
         </div>
       )}
-      {showCollection && <CollectionPanel onClose={() => setShowCollection(false)} />}
+      {showCollection && <CollectionPanel onClose={() => setShowCollection(false)} currentUser={user} />}
       {quiz && <QuizModal quiz={quiz} onClose={() => setQuiz(null)} onWin={handleWin} />}
       {waterQuiz && (
         <QuizModal

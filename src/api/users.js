@@ -13,6 +13,7 @@ function norm(u) {
     plantsCount: u.plants_count,
     visitsCount: u.visits_count,
     langPrefs: u.lang_prefs ?? [],
+    collectionLocked: !!u.collection_locked,
   };
 }
 
@@ -42,5 +43,15 @@ export async function updateLangPrefs(langs) {
     body: JSON.stringify({ langs }),
   });
   if (!res.ok) throw new Error("Failed to update preferences");
+  return norm(await res.json());
+}
+
+export async function updateCollectionLock(locked) {
+  const res = await fetch(`${BASE}/users/me/collection-lock`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ locked }),
+  });
+  if (!res.ok) throw new Error("Failed to update collection lock");
   return norm(await res.json());
 }
