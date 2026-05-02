@@ -10,7 +10,7 @@ import { useCurrentUser } from "../hooks/useUser";
 import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
 
-export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, musicMuted, onToggleMusic, pendingPlant, onClearPending }) {
+export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, musicPlaying, onToggleMusic, pendingPlant, onClearPending }) {
   const { data: fetchedUser } = useCurrentUser();
   const user = authUser ?? fetchedUser;
   const queryClient = useQueryClient();
@@ -45,6 +45,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [showPendingGifts, setShowPendingGifts] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef({ startX: 0, startY: 0, moved: false, hideTimer: null });
+  const [seedError, setSeedError] = useState("");
 
   // Load garden plants from DB once
   useEffect(() => {
@@ -120,13 +121,18 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
     if (seedLoading) return;
     if (cachedSeed.current) { setQuiz(cachedSeed.current); return; }
     setSeedLoading(true);
+    setSeedError("");
     try {
       const data = await fetchQuiz();
       const q = buildQuiz(data);
       cachedSeed.current = q;
       setQuiz(q);
-    } catch {
-      // silently fail — user can tap again
+    } catch (e) {
+      if (e.code === "QUOTA") {
+        setSeedError(e.message);
+        setTimeout(() => setSeedError(""), 6000);
+      }
+      // other errors fail silently — user can tap again
     } finally {
       setSeedLoading(false);
     }
@@ -189,8 +195,8 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         <div className="sign"><h1>{user?.name ?? "Garden"}'s Garden</h1></div>
         <div style={{ flex: 1 }} />
         <button className="icon-btn" onClick={onVisit}><Users size={15} strokeWidth={2} /></button>
-        <button className="icon-btn" onClick={onToggleMusic} title={musicMuted ? "Unmute music" : "Mute music"}>
-          {musicMuted ? <VolumeX size={15} strokeWidth={2} /> : <Music size={15} strokeWidth={2} />}
+        <button className="icon-btn" onClick={onToggleMusic} title={musicPlaying ? "Mute music" : "Play music"}>
+          {musicPlaying ? <Music size={15} strokeWidth={2} /> : <VolumeX size={15} strokeWidth={2} />}
         </button>
         <button className="icon-btn" onClick={onOpenSettings}><Settings size={15} strokeWidth={2} /></button>
         <button className="icon-btn" onClick={() => setShowLogoutConfirm(true)}><LogOut size={15} strokeWidth={2} /></button>
@@ -347,14 +353,24 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         </div>
       ) : (
         <>
-          <button className={`seed-peek${seedLoading ? " seed-loading" : ""}`} onClick={handleNewSeed} disabled={seedLoading}>
+          <button
+            className={`seed-peek${seedLoading ? " seed-loading" : ""}${seedError ? " seed-quota" : ""}`}
+            onClick={handleNewSeed}
+            disabled={seedLoading || !!seedError}
+          >
             <div className="pouch">
-              {seedLoading ? <span className="seed-sprout">🌱</span> : "🌰"}
+              {seedError ? "🌅" : seedLoading ? <span className="seed-sprout">🌱</span> : "🌰"}
             </div>
             <div className="label">
-              {seedLoading ? <b>GROWING…</b> : <><b>NEW SEED</b> · answer to plant</>}
+              {seedError
+                ? <span style={{ fontSize: 11, lineHeight: 1.2 }}>{seedError}</span>
+                : seedLoading
+                  ? <b>GROWING…</b>
+                  : <><b>NEW SEED</b> · answer to plant</>}
             </div>
-            <span className="plant-cta">{seedLoading ? <span className="seed-dots"><span/><span/><span/></span> : "QUIZ"}</span>
+            <span className="plant-cta">
+              {seedError ? "🚫" : seedLoading ? <span className="seed-dots"><span/><span/><span/></span> : "QUIZ"}
+            </span>
           </button>
           <button className="collection-btn" onClick={() => setShowCollection(true)}>
             <div className="icon">🌸</div>

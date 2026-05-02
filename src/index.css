@@ -1293,6 +1293,305 @@ button { font-family: var(--font-body); }
 }
 .visit-gift-btn:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 2px 0 #5a3e1a; }
 
+/* ── Loading splash ──────────────────────────────────────────────────────── */
+.splash {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+  overflow: hidden;
+  /* Cover instantly at full opacity — no fade-in. The splash must hide the
+     screen underneath the moment it mounts, otherwise the new tab "blinks"
+     into view during a fade-in ramp. Inner elements (brand, hero) handle
+     their own entrance animations. */
+  background:
+    radial-gradient(80% 50% at 50% 100%, #88c46a 0%, transparent 70%),
+    linear-gradient(180deg, #ddf3ff 0%, #e8f4d6 50%, #c5e29c 100%);
+}
+.splash.splash-fading {
+  animation: splashFadeOut 0.5s ease forwards;
+}
+@keyframes splashFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}
+
+/* Soft drifting clouds in the sky band */
+.splash-cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  filter: blur(1px);
+  pointer-events: none;
+}
+.splash-cloud-1 { width: 120px; height: 36px; top: 14%; animation: splashCloud1 22s linear infinite; }
+.splash-cloud-2 { width:  82px; height: 26px; top: 22%; animation: splashCloud2 28s linear infinite; opacity: 0.55; }
+.splash-cloud-3 { width: 140px; height: 40px; top: 32%; animation: splashCloud1 30s linear infinite; animation-delay: -10s; opacity: 0.45; }
+@keyframes splashCloud1 {
+  from { left: -25%; }
+  to   { left: 110%; }
+}
+@keyframes splashCloud2 {
+  from { left: 105%; }
+  to   { left: -25%; }
+}
+
+/* Brand wordmark up top */
+.splash-brand {
+  position: absolute; top: 12%; left: 0; right: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: splashBrandIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes splashBrandIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.splash-logo {
+  font-size: 30px; line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(40, 30, 12, 0.2));
+  animation: splashLogoBob 2.8s ease-in-out infinite;
+}
+@keyframes splashLogoBob {
+  0%, 100% { transform: translateY(0)    rotate(-3deg); }
+  50%      { transform: translateY(-3px) rotate(3deg); }
+}
+.splash-name {
+  font-family: "Caprasimo", serif;
+  font-size: 32px; color: #1c2c19;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.5), 0 4px 12px rgba(40, 30, 12, 0.15);
+}
+
+/* Hero scene */
+.splash-hero {
+  position: relative;
+  width: 240px; height: 240px;
+  display: flex; align-items: center; justify-content: center;
+  animation: splashHeroIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes splashHeroIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Two layered halos that breathe in opposite phase for a gentle glow */
+.splash-halo {
+  position: absolute; width: 200px; height: 200px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 240, 180, 0.55) 0%, rgba(255, 240, 180, 0) 65%);
+  animation: splashHalo 3.4s ease-in-out infinite;
+}
+.splash-halo-2 {
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 70%);
+  animation-delay: -1.7s;
+}
+@keyframes splashHalo {
+  0%, 100% { transform: scale(0.85); opacity: 0.55; }
+  50%      { transform: scale(1.1);  opacity: 1; }
+}
+
+.splash-pot {
+  position: relative; z-index: 1;
+  font-size: 116px; line-height: 1;
+  filter: drop-shadow(0 10px 14px rgba(40, 30, 12, 0.35));
+  animation: splashPotSway 3.2s ease-in-out infinite;
+  transform-origin: center 90%;
+}
+@keyframes splashPotSway {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50%      { transform: rotate(4deg)  translateY(-3px); }
+}
+
+.splash-leaf {
+  position: absolute; font-size: 20px;
+  filter: drop-shadow(0 2px 3px rgba(40, 30, 12, 0.25));
+  pointer-events: none; z-index: 2;
+}
+.splash-leaf-1 { animation: splashLeafA 8s ease-in-out infinite; }
+.splash-leaf-2 { animation: splashLeafB 9s ease-in-out infinite; animation-delay: -3.5s; opacity: 0.85; }
+@keyframes splashLeafA {
+  0%   { left: -8%;  top: 75%; transform: rotate(-20deg); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { left: 105%; top: 20%; transform: rotate(220deg); opacity: 0; }
+}
+@keyframes splashLeafB {
+  0%   { left: 105%; top: 65%; transform: rotate(15deg); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { left: -8%;  top: 30%; transform: rotate(-200deg); opacity: 0; }
+}
+
+/* Message slot — fixed height so cycling text doesn't push other elements */
+.splash-msg-wrap {
+  height: 26px; margin-top: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.splash-msg {
+  font-family: "Lilita One", sans-serif;
+  font-size: 15px; color: #3e2a16;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: splashMsgIn 0.45s ease;
+}
+@keyframes splashMsgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Dots */
+.splash-dots {
+  display: flex; gap: 8px;
+  margin-top: 16px;
+}
+.splash-dots span {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: #5a3e1a; opacity: 0.35;
+  animation: splashDot 1.3s ease-in-out infinite;
+}
+.splash-dots span:nth-child(2) { animation-delay: 0.18s; }
+.splash-dots span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes splashDot {
+  0%, 80%, 100% { transform: translateY(0);    opacity: 0.35; }
+  40%           { transform: translateY(-7px); opacity: 1; }
+}
+
+/* ── Friends screen ──────────────────────────────────────────────────────── */
+.friends-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(120% 60% at 50% 0%, #c8e8f5 0%, #d8edd2 30%, #b0d28f 65%, #8db867 100%);
+}
+.friends-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 50px 12px 8px;
+  flex-shrink: 0;
+}
+.friends-searchbar {
+  margin: 6px 12px 8px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  box-shadow: 0 2px 0 #5a3e1a, inset 0 1px 0 rgba(255,255,255,0.5);
+  flex-shrink: 0;
+}
+.friends-search-icon { color: #8a6a3a; flex-shrink: 0; }
+.friends-search {
+  flex: 1; padding: 9px 0; min-width: 0;
+  background: transparent; border: 0; outline: none;
+  color: #3e2a16; font-size: 13px;
+  font-family: "Lilita One", sans-serif; letter-spacing: 0.02em;
+}
+.friends-search::placeholder { color: #b09070; }
+
+.friends-body {
+  flex: 1; overflow-y: auto;
+  padding: 8px 12px 28px;
+  display: flex; flex-direction: column;
+}
+.friends-body::-webkit-scrollbar { width: 4px; }
+.friends-body::-webkit-scrollbar-thumb { background: rgba(90,62,26,0.3); border-radius: 4px; }
+
+/* Section is just a labeled list — no wrapper card, so row width matches the leaderboard exactly */
+.friends-section {
+  display: flex; flex-direction: column; gap: 7px;
+  margin-bottom: 4px;
+}
+.friends-section h3 {
+  font-family: "Lilita One", sans-serif; font-size: 11px; font-weight: 400;
+  color: #5a3e1a; margin: 4px 6px 2px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.friends-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 32px 12px;
+  color: #8a6a3a;
+}
+.friends-empty span { font-size: 36px; }
+.friends-empty p {
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  margin: 0; letter-spacing: 0.04em; text-align: center;
+}
+
+/* Each row is its own cream paper card — identical to .lb-row */
+.friend-row {
+  display: grid; grid-template-columns: 40px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, #fffef6 0%, #fffbe9 100%);
+  border: 2px solid #5a3e1a; border-radius: 16px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 12px -4px rgba(40,30,12,0.25);
+  transition: transform 0.1s;
+}
+.friend-row:active { transform: translateY(2px); box-shadow: 0 1px 0 #5a3e1a; }
+.friend-avatar {
+  width: 40px; height: 40px; border-radius: 999px; flex-shrink: 0;
+  border: 2.5px solid #5a3e1a;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Lilita One", sans-serif; font-size: 15px; color: #fff;
+  box-shadow: 0 2px 0 #5a3e1a;
+  cursor: pointer;
+}
+.friend-info {
+  flex: 1; min-width: 0; text-align: left;
+  background: none; border: 0; padding: 0; cursor: pointer;
+}
+.friend-name {
+  font-family: "Lilita One", sans-serif; font-size: 15px; color: #3e2a16;
+  line-height: 1.1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.friend-meta {
+  font-size: 11px; color: #8a6a44; margin-top: 2px;
+  font-family: "Lilita One", sans-serif; letter-spacing: 0.02em;
+}
+
+.friend-add-btn,
+.friend-visit-btn,
+.friend-remove-btn {
+  flex-shrink: 0; cursor: pointer;
+  font-family: "Lilita One", sans-serif; letter-spacing: 0.04em;
+  border-radius: 999px; padding: 5px 10px;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; line-height: 1;
+  transition: transform 0.08s;
+}
+.friend-add-btn {
+  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
+  color: #fff; border: 2px solid #2b3f1a;
+  box-shadow: 0 2px 0 #2b3f1a;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+.friend-add-btn:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 #2b3f1a; }
+.friend-add-btn:disabled { opacity: 0.6; cursor: default; }
+.friend-visit-btn {
+  background: linear-gradient(180deg, #fffbe9 0%, #f0e8cc 100%);
+  border: 2px solid #5a3e1a; color: #3e2a16;
+  box-shadow: 0 2px 0 #5a3e1a;
+  font-size: 14px; padding: 4px 10px;
+}
+.friend-visit-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #5a3e1a; }
+.friend-remove-btn {
+  background: rgba(255,255,255,0.6);
+  border: 1.5px solid #b89260; color: #8a6a3a;
+  padding: 4px 8px;
+}
+.friend-remove-btn:hover:not(:disabled) { background: #f8d4cc; border-color: #a83a4a; color: #a83a4a; }
+.friend-remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.friend-tag {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  padding: 4px 9px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  letter-spacing: 0.04em;
+  border: 1.5px solid;
+}
+.friend-tag.added   { color: #3e6534; background: #d8ecce; border-color: #87c25b; }
+.friend-tag.pending { color: #8a6a3a; background: #fff3d6; border-color: #d6b167; }
+
 /* ── Settings screen ─────────────────────────────────────────────────────── */
 .settings-screen {
   position: absolute; inset: 0;

@@ -92,6 +92,12 @@ export async function advanceWordStage(plantId) {
 
 export async function fetchQuiz() {
   const res = await fetch(`${BASE}/words/quiz`, { headers: authHeader() });
+  if (res.status === 429) {
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.detail || "Daily seed limit reached");
+    err.code = "QUOTA";
+    throw err;
+  }
   if (!res.ok) throw new Error("Failed to fetch quiz");
   return res.json();
 }

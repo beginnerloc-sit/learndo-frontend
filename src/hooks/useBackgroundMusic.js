@@ -110,5 +110,10 @@ export function useBackgroundMusic({ src = "/background_music.aac" } = {}) {
     }
   }
 
-  return { muted, toggleMute, started };
+  return {
+    muted,
+    started,
+    playing: started && !muted,   // true only when music is actually audible
+    toggleMute,
+  };
 }

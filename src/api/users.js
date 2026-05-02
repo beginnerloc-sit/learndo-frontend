@@ -33,6 +33,64 @@ export async function fetchFriends() {
   return list.map(norm);
 }
 
+export async function searchUsers(q) {
+  const res = await fetch(`${BASE}/users/search?q=${encodeURIComponent(q)}`, { headers: authHeader() });
+  if (!res.ok) throw new Error("Search failed");
+  const list = await res.json();
+  return list.map(norm);
+}
+
+function normRequest(r) {
+  return { id: r.id, user: norm(r.user), createdAt: r.created_at };
+}
+
+export async function sendFriendRequest(friendId) {
+  const res = await fetch(`${BASE}/users/me/friend-requests`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ friend_id: friendId }),
+  });
+  if (!res.ok) throw new Error("Failed to send request");
+  return normRequest(await res.json());
+}
+
+export async function fetchIncomingRequests() {
+  const res = await fetch(`${BASE}/users/me/friend-requests`, { headers: authHeader() });
+  if (!res.ok) throw new Error("Failed to fetch requests");
+  return (await res.json()).map(normRequest);
+}
+
+export async function fetchOutgoingRequests() {
+  const res = await fetch(`${BASE}/users/me/friend-requests/sent`, { headers: authHeader() });
+  if (!res.ok) throw new Error("Failed to fetch requests");
+  return (await res.json()).map(normRequest);
+}
+
+export async function acceptFriendRequest(requestId) {
+  const res = await fetch(`${BASE}/users/me/friend-requests/${requestId}/accept`, {
+    method: "POST",
+    headers: authHeader(),
+  });
+  if (!res.ok) throw new Error("Failed to accept");
+  return norm(await res.json());
+}
+
+export async function declineFriendRequest(requestId) {
+  const res = await fetch(`${BASE}/users/me/friend-requests/${requestId}`, {
+    method: "DELETE",
+    headers: authHeader(),
+  });
+  if (!res.ok) throw new Error("Failed to decline");
+}
+
+export async function removeFriend(friendId) {
+  const res = await fetch(`${BASE}/users/me/friends/${encodeURIComponent(friendId)}`, {
+    method: "DELETE",
+    headers: authHeader(),
+  });
+  if (!res.ok) throw new Error("Failed to remove friend");
+}
+
 export async function fetchUserById(userId) {
   const res = await fetch(`${BASE}/users/${userId}`, { headers: authHeader() });
   if (!res.ok) throw new Error("User not found");
