@@ -594,6 +594,67 @@ button { font-family: var(--font-body); }
 .lesson .feedback { margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: #c8e6a8; border: 2px solid #2b3f1a; display: flex; gap: 10px; align-items: center; box-shadow: 0 4px 0 #2b3f1a; }
 .lesson .feedback .msg { font-family: "Lilita One", sans-serif; font-size: 14px; color: #1c2c19; flex: 1; letter-spacing: 0.02em; }
 
+/* ── Desktop gate ── */
+.desktop-gate {
+  display: none; /* hidden on real phones */
+}
+@media (min-width: 480px) {
+  .desktop-gate {
+    display: flex;
+    position: fixed; inset: 0; z-index: 99999;
+    align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #c8eabf 0%, #a8d89a 40%, #7ab85a 100%);
+    padding: 24px;
+  }
+  /* push the actual app behind the gate so it doesn't flash */
+  .desktop-gate ~ * { visibility: hidden; }
+}
+.desktop-gate-card {
+  background: linear-gradient(180deg, #fffdf5 0%, #f3ecdc 100%);
+  border: 3px solid #5a3e1a;
+  border-radius: 28px;
+  box-shadow: 0 8px 0 #3e2410, 0 20px 40px -8px rgba(30,20,8,0.35);
+  padding: 36px 28px 32px;
+  max-width: 380px; width: 100%;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.desktop-gate-emoji {
+  font-size: 56px; line-height: 1;
+  animation: gateSway 2.8s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: center bottom;
+}
+@keyframes gateSway {
+  0%, 100% { transform: rotate(-6deg); }
+  50%       { transform: rotate(6deg); }
+}
+.desktop-gate-title {
+  font-family: "Lilita One", sans-serif;
+  font-size: 26px; font-weight: 400;
+  color: #1c2c19; margin: 0;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.08);
+}
+.desktop-gate-body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 15px; color: #4a3a1a;
+  line-height: 1.55; margin: 0;
+}
+.desktop-gate-hint {
+  font-family: "Lilita One", sans-serif;
+  font-size: 13px; color: #3e6534;
+  letter-spacing: 0.02em; margin: 0;
+}
+.desktop-gate-phone {
+  font-size: 40px; margin-top: 4px;
+  animation: gatePhoneBob 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes gatePhoneBob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
 /* ── Flower sway ── */
 @keyframes sway {
   0%, 100% { transform: rotate(-3deg); }

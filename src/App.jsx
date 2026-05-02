@@ -75,9 +75,29 @@ function AppShell() {
   );
 }
 
+function DesktopGate() {
+  return (
+    <div className="desktop-gate">
+      <div className="desktop-gate-card">
+        <div className="desktop-gate-emoji">🌱</div>
+        <h1 className="desktop-gate-title">Whoa, big screen!</h1>
+        <p className="desktop-gate-body">
+          Our little garden was lovingly designed for pockets, not panoramas.
+          Your plants are shy around large monitors. 🙈
+        </p>
+        <p className="desktop-gate-hint">
+          Open Learndo on your phone and they'll bloom right up! 🌸
+        </p>
+        <div className="desktop-gate-phone">📱</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <DesktopGate />
       <AppShell />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
