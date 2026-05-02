@@ -1,0 +1,10 @@
+node_modules/
+dist/
+
+# Env files (keep .env.example committed, ignore the rest)
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store

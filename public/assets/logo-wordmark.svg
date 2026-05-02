@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" width="260" height="64" fill="none">
+  
+  <g transform="translate(0 0)">
+    <path d="M16 42 L48 42 L44 56 Q44 58 42 58 L22 58 Q20 58 20 56 Z" fill="#b89a73"></path>
+    <path d="M16 40 L48 40 L48 44 L16 44 Z" fill="#936e44"></path>
+    <path d="M32 42 Q31 30 32 18" stroke="#3e6534" stroke-width="3" stroke-linecap="round" fill="none"></path>
+    <path d="M32 28 Q20 24 16 12 Q26 14 32 22 Z" fill="#527e44"></path>
+    <path d="M32 22 Q44 16 50 6 Q42 22 34 26 Z" fill="#6f9a5f"></path>
+    <circle cx="32" cy="16" r="2.5" fill="#f3c14a"></circle>
+  </g>
+  
+  <text x="74" y="44" font-family="Fraunces, Georgia, serif" font-size="34" font-weight="700" fill="#324f2b" letter-spacing="-0.02em" style="font-variation-settings: &#39;opsz&#39; 60;">learndo</text>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" fill="none">
+  
+  <defs>
+    <g id="leaf">
+      <path d="M0 0 Q-8 -10 -10 -22 Q0 -16 4 -6 Z" fill="#3e6534"></path>
+      <path d="M0 0 Q-8 -10 -10 -22" stroke="#283e23" stroke-width="0.6" fill="none" opacity="0.5"></path>
+    </g>
+  </defs>
+  <use href="#leaf" transform="translate(40 60) rotate(-20)"></use>
+  <use href="#leaf" transform="translate(140 40) rotate(40)"></use>
+  <use href="#leaf" transform="translate(80 140) rotate(70)"></use>
+  <use href="#leaf" transform="translate(170 160) rotate(-50)"></use>
+  <use href="#leaf" transform="translate(20 180) rotate(20)"></use>
+</svg>

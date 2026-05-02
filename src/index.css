@@ -1,0 +1,838 @@
+/* ── Learndo Design Tokens ── */
+:root {
+  --moss-50:  #f1f6ef;
+  --moss-100: #dee9d9;
+  --moss-200: #bdd3b4;
+  --moss-300: #94b787;
+  --moss-400: #6f9a5f;
+  --moss-500: #527e44;
+  --moss-600: #3e6534;
+  --moss-700: #324f2b;
+  --moss-800: #283e23;
+  --moss-900: #1c2c19;
+  --soil-50:  #faf6f1;
+  --soil-100: #efe5d6;
+  --soil-200: #d9c5a8;
+  --soil-300: #b89a73;
+  --soil-400: #936e44;
+  --soil-500: #6e4e2c;
+  --soil-600: #543a1f;
+  --soil-700: #3e2a16;
+  --soil-800: #2a1c0e;
+  --cream-50:  #faf6ee;
+  --cream-100: #f3ecdc;
+  --cream-200: #e8dec5;
+  --cream-300: #d6c7a3;
+  --bud:      #f3c14a;
+  --bud-dk:   #c89a2e;
+  --bloom:    #e87aa3;
+  --border-soft:   #e7dec8;
+  --border-medium: #bdd3b4;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body:    "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+  --shadow-leaf: 0 2px 8px -2px rgba(40,62,35,0.12), 0 1px 2px rgba(40,62,35,0.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--soil-700);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: var(--font-body); }
+
+/* ── In-frame scene (full bleed sky→grass) ── */
+.scene {
+  position: absolute; inset: 0;
+  background: radial-gradient(140% 60% at 50% 0%, #c8e8f5 0%, #d8edd2 35%, #b0d28f 70%, #8db867 100%);
+  overflow: hidden;
+}
+
+/* ── Auth screen ── */
+.auth-wrap {
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.auth-card {
+  width: 100%; max-width: 320px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 24px;
+  box-shadow: 0 6px 0 #5a3e1a, 0 14px 28px -6px rgba(40,30,12,0.4);
+  padding: 28px 22px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.auth-tabs {
+  display: flex; background: rgba(90,62,26,0.1); border-radius: 12px; padding: 3px; gap: 3px;
+}
+.auth-tab {
+  flex: 1; padding: 7px; border-radius: 9px; border: none; background: none;
+  font-family: "Lilita One", sans-serif; font-size: 12px; letter-spacing: 0.06em;
+  color: #6e4e2c; cursor: pointer; transition: all 0.15s;
+}
+.auth-tab.active { background: white; color: #1c2c19; box-shadow: 0 2px 4px rgba(0,0,0,0.12); }
+.auth-field { display: flex; flex-direction: column; gap: 5px; }
+.auth-field label {
+  font-family: "Lilita One", sans-serif; font-size: 11px;
+  color: #6e4e2c; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.auth-field input {
+  padding: 10px 12px; border: 2px solid #5a3e1a; border-radius: 10px;
+  background: white; font-family: var(--font-body); font-size: 14px; color: #1c2c19;
+  outline: none; transition: border-color 0.15s;
+}
+.auth-field input:focus { border-color: #3e6534; box-shadow: 0 0 0 3px rgba(62,101,52,0.15); }
+.auth-error {
+  font-family: "Lilita One", sans-serif; font-size: 11px;
+  color: #c1325a; text-align: center; letter-spacing: 0.03em;
+}
+
+/* ── Top bar ── */
+.sky-bar {
+  position: absolute; top: 8px; left: 10px; right: 10px; z-index: 5;
+  display: flex; gap: 5px; align-items: center;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px 3px 3px; border-radius: 999px;
+  background: linear-gradient(180deg, #fff 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a;
+  box-shadow: 0 2px 0 #5a3e1a;
+  font-weight: 800; font-size: 12px; color: #3e2a16;
+  font-family: "Lilita One", sans-serif;
+  cursor: default;
+}
+.pill .ic {
+  width: 20px; height: 20px; border-radius: 999px;
+  display: grid; place-items: center; font-size: 11px;
+  background: var(--bud);
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.15);
+}
+.pill.streak { background: linear-gradient(180deg, #f6a3c4 0%, #e87aa3 100%); color: white; border-color: #7d2249; box-shadow: 0 2px 0 #7d2249; }
+.pill.streak .ic { background: white; }
+/* ── Owner sign (inline in top bar) ── */
+.sign {
+  padding: 4px 14px 5px;
+  background: linear-gradient(180deg, #dcc28e 0%, #b89260 100%);
+  border: 2px solid #5a3e1a; border-radius: 12px;
+  box-shadow: 0 2px 0 #5a3e1a;
+  white-space: nowrap;
+}
+.sign h1 {
+  font-family: "Lilita One", sans-serif; font-size: 12px; font-weight: 400;
+  color: #fffbe9; margin: 0; line-height: 1;
+  text-shadow: 0 1px 0 #5a3e1a;
+}
+
+.icon-btn {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: linear-gradient(180deg, #fff 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; cursor: pointer;
+  display: grid; place-items: center; color: #3e2a16;
+  box-shadow: 0 2px 0 #5a3e1a;
+}
+
+/* ── Pannable world stage ── */
+.stage {
+  position: absolute; left: 0; right: 0; top: 48px; bottom: 152px;
+  overflow: hidden;
+}
+.world {
+  position: absolute; left: 0; top: 0;
+  width: 900px; height: 1200px;
+  will-change: transform; cursor: grab; touch-action: none; user-select: none;
+}
+.world.dragging { cursor: grabbing; }
+.world svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* ── Minimap ── */
+.minimap {
+  position: absolute; top: 162px; right: 12px; z-index: 5;
+  width: 78px; height: 78px;
+  background: linear-gradient(180deg, #d4ecc4 0%, #aed197 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 14px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 14px -4px rgba(40,30,12,0.4);
+  overflow: hidden;
+}
+.minimap .vp {
+  position: absolute; border: 2px solid #5a3e1a; border-radius: 4px;
+  background: rgba(255,255,255,0.25);
+}
+
+/* ── Quest plank ── */
+.quest-plank {
+  position: absolute; left: 12px; right: 12px; bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px 10px 14px;
+  background: linear-gradient(180deg, #dcc28e 0%, #b89260 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 22px;
+  box-shadow: 0 5px 0 #5a3e1a, 0 14px 26px -8px rgba(40,30,12,0.5);
+  z-index: 6;
+}
+.quest-plank::before, .quest-plank::after {
+  content: ""; position: absolute; top: 50%; transform: translateY(-50%);
+  width: 12px; height: 12px; border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #6e4e2c 0%, #2a1c0e 80%);
+  border: 1.5px solid #5a3e1a;
+}
+.quest-plank::before { left: 8px; }
+.quest-plank::after  { right: 8px; }
+.quest-plank .ic {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px;
+  background: linear-gradient(180deg, #f6e0a3 0%, #d6b167 100%);
+  border: 2px solid #5a3e1a; display: grid; place-items: center;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5); margin-left: 14px;
+}
+.quest-plank .lbl { flex: 1; min-width: 0; padding-right: 10px; }
+.quest-plank .lbl .t { font-family: "Lilita One", sans-serif; font-size: 15px; color: #fffbe9; line-height: 1; text-shadow: 0 2px 0 #5a3e1a; letter-spacing: 0.02em; }
+.quest-plank .lbl .s { font-size: 11px; color: #5a3e1a; margin-top: 4px; font-weight: 700; letter-spacing: 0.02em; }
+.quest-plank .go { margin-right: 14px; }
+
+/* ── Gift notification pill ── */
+.gift-notif-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px 3px 5px; border-radius: 999px;
+  background: linear-gradient(180deg, #ffe08a 0%, #f3c14a 100%);
+  border: 2px solid #5a3e1a;
+  box-shadow: 0 2px 0 #5a3e1a;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  color: #3e2a16; cursor: pointer;
+}
+.gift-notif-pill:active { transform: translateY(1px); box-shadow: none; }
+.gift-ring-icon {
+  display: inline-block;
+  animation: giftRing 2.4s ease-in-out infinite;
+  transform-origin: center top;
+}
+@keyframes giftRing {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  60%  { transform: rotate(-18deg); }
+  65%  { transform: rotate(18deg); }
+  70%  { transform: rotate(-13deg); }
+  75%  { transform: rotate(13deg); }
+  80%  { transform: rotate(-6deg); }
+  85%  { transform: rotate(0deg); }
+}
+
+/* ── Pending gifts list (modal) ── */
+.pending-gifts-list {
+  display: flex; flex-direction: column; gap: 7px;
+  max-height: 280px; overflow-y: auto; padding-right: 2px;
+}
+.pending-gifts-list::-webkit-scrollbar { width: 4px; }
+.pending-gifts-list::-webkit-scrollbar-thumb { background: #d9c5a8; border-radius: 4px; }
+.pending-gift-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-radius: 13px; width: 100%; text-align: left;
+  background: linear-gradient(180deg, #fffef6 0%, #fff8e8 100%);
+  border: 2px solid #d9c5a8;
+  box-shadow: 0 2px 0 #c8ad8c;
+  cursor: pointer; transition: transform 0.1s;
+}
+.pending-gift-row:active { transform: translateY(1px); box-shadow: none; }
+.pending-gift-main { display: flex; flex-direction: column; gap: 2px; }
+.pending-gift-word {
+  font-family: "Caprasimo", serif; font-size: 17px; color: #1c2c19; line-height: 1;
+}
+.pending-gift-from {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #b53a6a; letter-spacing: 0.04em;
+}
+.pending-gift-cta {
+  font-family: "Lilita One", sans-serif; font-size: 11px;
+  color: #3e6534; letter-spacing: 0.06em; flex-shrink: 0;
+}
+
+/* ── Gift from tag (word card) ── */
+.gift-from-tag {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #b53a6a; letter-spacing: 0.04em;
+  background: #fde8f0; border: 1.5px solid #e8a0b8;
+  border-radius: 999px; padding: 2px 8px;
+  display: inline-block; margin-bottom: 6px;
+}
+
+/* ── Seed peek ── */
+.seed-peek {
+  position: absolute; bottom: 86px; left: 12px; right: 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 5px;
+  background: linear-gradient(180deg, #fff 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 8px 14px -6px rgba(40,30,12,0.35);
+  cursor: pointer; z-index: 6;
+}
+.seed-peek .pouch {
+  width: 32px; height: 32px; border-radius: 999px;
+  background: linear-gradient(180deg, #f3c14a 0%, #c89a2e 100%);
+  border: 2px solid #5a3e1a; display: grid; place-items: center;
+}
+.seed-peek .label { font-family: "Lilita One", sans-serif; font-size: 13px; color: #3e2a16; letter-spacing: 0.02em; flex: 1; text-align: center; }
+.seed-peek .label b { color: #b53a6a; }
+.seed-peek .plant-cta {
+  margin-left: auto; flex-shrink: 0;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  color: #fffbe9; letter-spacing: 0.06em;
+  background: linear-gradient(180deg,#5a9333 0%, #3e6534 100%);
+  padding: 5px 12px; border-radius: 999px;
+  border: 1.5px solid #2b3f1a; box-shadow: 0 2px 0 #2b3f1a;
+  text-shadow: 0 1px 0 #2b3f1a;
+  display: flex; align-items: center; justify-content: center; min-width: 44px;
+}
+
+/* Loading state */
+.seed-peek.seed-loading { cursor: default; }
+.seed-peek.seed-loading .pouch {
+  animation: seedWiggle 0.5s ease-in-out infinite alternate;
+}
+@keyframes seedWiggle {
+  from { transform: rotate(-15deg) scale(1.05); }
+  to   { transform: rotate(15deg)  scale(1.1); }
+}
+.seed-sprout {
+  display: inline-block;
+  animation: sproutPop 0.6s ease-in-out infinite alternate;
+}
+@keyframes sproutPop {
+  from { transform: translateY(2px) scale(0.9); }
+  to   { transform: translateY(-3px) scale(1.15); }
+}
+.seed-dots {
+  display: flex; align-items: center; gap: 3px;
+}
+.seed-dots span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #fffbe9; display: inline-block;
+  animation: dotBounce 0.7s ease-in-out infinite;
+}
+.seed-dots span:nth-child(2) { animation-delay: 0.15s; }
+.seed-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dotBounce {
+  0%, 100% { transform: translateY(0);    opacity: 0.5; }
+  50%       { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ── Plant banner (planting mode) ── */
+.plant-banner {
+  position: absolute; left: 12px; right: 12px; bottom: 86px;
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2.5px solid #5a9333; border-radius: 18px;
+  box-shadow: 0 4px 0 #3e6534, 0 12px 24px -8px rgba(40,30,12,0.45);
+  z-index: 6;
+}
+.plant-banner .ic { width: 36px; height: 36px; border-radius: 999px; background: linear-gradient(180deg,#cfe8be,#9cc47b); border: 2px solid #3e6534; display: grid; place-items: center; }
+.plant-banner .lbl { flex: 1; min-width: 0; line-height: 1.15; }
+.plant-banner .lbl .t { font-family: "Lilita One", sans-serif; font-size: 11px; color: #3e6534; letter-spacing: 0.08em; }
+.plant-banner .lbl .s { font-family: "Caprasimo", serif; font-size: 15px; color: #1c2c19; }
+
+/* ── Ghost seed ── */
+.ghost-seed {
+  position: absolute; pointer-events: none;
+  transform: translate(-50%, -85%); z-index: 7;
+  animation: ghostBob 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+.ghost-seed .ghost-label {
+  margin-top: 2px; text-align: center;
+  font-family: 'Caprasimo', serif; font-size: 13px; color: #5a3e1a;
+  background: #fffbe9; border: 1.5px solid #5a3e1a; border-radius: 999px;
+  padding: 2px 8px; display: inline-block;
+  transform: translate(-50%, 0); position: absolute; left: 50%;
+  white-space: nowrap; box-shadow: 0 2px 0 #5a3e1a;
+}
+@keyframes ghostBob {
+  0%,100% { transform: translate(-50%, -85%); }
+  50%     { transform: translate(-50%, -92%); }
+}
+
+/* ── Word info card overlay ── */
+.word-card {
+  position: absolute; z-index: 10; pointer-events: none;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 16px;
+  box-shadow: 0 4px 0 #5a3e1a, 0 8px 18px -6px rgba(40,30,12,0.45);
+  padding: 12px 14px 10px; min-width: 148px; max-width: 200px;
+  transform: translate(-50%, -100%) translateY(-12px);
+  animation: cardPop 220ms cubic-bezier(0.34,1.56,0.64,1) backwards;
+  pointer-events: auto;
+}
+@keyframes cardPop { from { opacity: 0; transform: translate(-50%, -100%) translateY(-2px) scale(0.9); } }
+.word-card::after {
+  content: ""; position: absolute;
+  left: calc(50% + var(--arrow-x, 0px)); bottom: -10px;
+  width: 14px; height: 14px; background: #f3ecdc;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 2.5px solid #5a3e1a; border-bottom: 2.5px solid #5a3e1a;
+}
+.word-card.below { transform: translate(-50%, 0%) translateY(12px); animation: cardPopBelow 220ms cubic-bezier(0.34,1.56,0.64,1) backwards; }
+@keyframes cardPopBelow { from { opacity: 0; transform: translate(-50%, 0%) translateY(2px) scale(0.9); } }
+.word-card.below::after { bottom: auto; top: -10px; border-right: none; border-bottom: none; border-left: 2.5px solid #5a3e1a; border-top: 2.5px solid #5a3e1a; }
+.word-card .lang { font-family: "Lilita One", sans-serif; font-size: 10px; color: #fffbe9; background: var(--lang-color, #c1325a); padding: 2px 7px; border-radius: 999px; border: 1.5px solid #5a3e1a; display: inline-block; line-height: 1; }
+.word-card .ipa { font-family: var(--font-mono); font-size: 10px; color: #6e4e2c; margin-top: 1px; }
+.word-card .trans { font-family: "Caprasimo", serif; font-size: 16px; color: #1c2c19; line-height: 1.15; margin-top: 3px; }
+.word-card .meta { font-family: "Lilita One", sans-serif; font-size: 9px; color: #6e4e2c; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 5px; display: flex; gap: 6px; align-items: center; }
+.word-card .meta .dot { width: 3px; height: 3px; background: #6e4e2c; border-radius: 999px; }
+.word-card .stars { color: #e8a91a; font-size: 11px; }
+.word-card .wc-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 4px; }
+.word-card .wc-pos { font-family: "Lilita One", sans-serif; font-size: 9px; color: #7a5c3a; background: #f0e6d0; border: 1.5px solid #c9a87a; border-radius: 999px; padding: 1px 6px; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.05em; }
+.word-card .wc-word { font-family: "Caprasimo", serif; font-size: 22px; color: #1c2c19; line-height: 1.1; margin-bottom: 2px; }
+.word-card .wc-example { font-size: 10px; color: #6e4e2c; font-style: italic; margin-top: 5px; line-height: 1.4; border-left: 2px solid #c9a87a; padding-left: 6px; }
+.word-card .wc-reactions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.word-card .wc-reaction { font-size: 15px; line-height: 1; cursor: default; }
+
+/* ── Modal ── */
+.modal-backdrop { position: absolute; inset: 0; background: rgba(28,18,8,0.6); display: grid; place-items: center; z-index: 30; }
+.modal {
+  width: calc(100% - 28px); max-width: 310px;
+  background: #fffbe9; border: 3px solid #5a3e1a; border-radius: 18px;
+  box-shadow: 0 8px 0 #3e2410, 0 16px 32px rgba(0,0,0,0.35);
+  padding: 14px 14px 12px;
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.lang-pill { font-family: "Lilita One", sans-serif; font-size: 10px; color: #fffbe9; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.06em; }
+.x-btn { width: 28px; height: 28px; border-radius: 999px; border: 2px solid #5a3e1a; background: #fffbe9; font-size: 18px; line-height: 1; color: #5a3e1a; font-weight: 700; cursor: pointer; box-shadow: 0 2px 0 #5a3e1a; }
+.x-btn:active { transform: translateY(2px); box-shadow: none; }
+.quiz-prompt { text-align: center; padding: 8px 0 12px; }
+.quiz-label { font-family: "Lilita One", sans-serif; font-size: 11px; color: #6e4e2c; letter-spacing: 0.08em; }
+.quiz-word { font-family: "Caprasimo", serif; font-size: 28px; color: #1c2c19; line-height: 1.05; margin-top: 4px; }
+.quiz-ipa { font-size: 11px; color: #6e4e2c; margin-top: 2px; font-style: italic; }
+.quiz-sentence { font-family: "Caprasimo", serif; font-size: 18px; color: #1c2c19; line-height: 1.35; margin-top: 6px; }
+.quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.quiz-opt { font-family: "Lilita One", sans-serif; font-size: 13px; padding: 11px 8px; border-radius: 12px; background: #fffbe9; border: 2.5px solid #5a3e1a; color: #1c2c19; letter-spacing: 0.02em; cursor: pointer; box-shadow: 0 3px 0 #5a3e1a; transition: transform 0.08s, background 0.15s; }
+.quiz-opt:hover:not(:disabled) { background: #fff5d6; }
+.quiz-opt:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.quiz-opt.right { background: #c8e6a8; border-color: #3e6534; box-shadow: 0 3px 0 #3e6534; }
+.quiz-opt.wrong { background: #f4c8c8; border-color: #a83a4a; box-shadow: 0 3px 0 #a83a4a; }
+.quiz-opt.dim { opacity: 0.5; }
+.quiz-foot { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin-top: 10px; }
+.quiz-foot .msg { font-family: "Lilita One", sans-serif; font-size: 12px; }
+.quiz-foot .msg.right { color: #3e6534; }
+.quiz-foot .msg.wrong { color: #a83a4a; }
+
+/* Sentence builder */
+.modal.sentence { max-width: 330px; }
+.sentence-box { min-height: 50px; padding: 10px; background: #f3ecdc; border: 2px dashed #b89260; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-content: center; }
+.sentence-box .placeholder { color: #6e4e2c; font-size: 12px; font-style: italic; }
+.bank { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; background: #fffbe9; border: 1.5px solid #d6b167; border-radius: 12px; min-height: 42px; }
+.sent-chip { font-family: "Caprasimo", serif; font-size: 13px; padding: 5px 11px; border-radius: 999px; background: #fffbe9; border: 2px solid #5a3e1a; color: #1c2c19; cursor: pointer; box-shadow: 0 2px 0 #5a3e1a; transition: transform 0.08s; }
+.sent-chip:hover { background: #fff5d6; }
+.sent-chip:active { transform: translateY(2px); box-shadow: none; }
+.sent-chip.in { background: #fff5d6; }
+.sent-chip.target { background: #f6e0a3; color: #b53a6a; border-color: #b53a6a; box-shadow: 0 2px 0 #b53a6a; }
+.sentence-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.sentence-foot .hint { font-family: "Lilita One", sans-serif; font-size: 11px; color: #6e4e2c; letter-spacing: 0.04em; }
+
+/* ── Hay-day cartoon button ── */
+.hd-btn {
+  border: 2.5px solid #2b3f1a; border-radius: 16px;
+  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
+  color: white; font-family: "Lilita One", sans-serif; font-weight: 400;
+  font-size: 14px; letter-spacing: 0.04em; padding: 9px 18px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 4px 0 #2b3f1a, 0 8px 14px -4px rgba(28,44,25,0.5);
+  cursor: pointer; text-shadow: 0 2px 0 rgba(0,0,0,0.25); text-transform: uppercase;
+}
+.hd-btn:active { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 2px 0 #2b3f1a; }
+.hd-btn.yellow { background: linear-gradient(180deg, #ffd96a 0%, #e8a91a 100%); border-color: #6e4e0e; box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), 0 4px 0 #6e4e0e; color: #4a2f08; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+.hd-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Collection button ── */
+.collection-btn {
+  position: absolute; left: 12px; right: 12px; bottom: 14px;
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 14px 5px 5px;
+  background: linear-gradient(180deg, #fff8e8 0%, #f0d98a 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 8px 14px -6px rgba(40,30,12,0.35);
+  cursor: pointer; z-index: 6;
+}
+.collection-btn .icon {
+  width: 32px; height: 32px; border-radius: 999px; flex-shrink: 0;
+  background: linear-gradient(180deg, #ff9ebc 0%, #c1325a 100%);
+  border: 2px solid #5a3e1a; display: grid; place-items: center; font-size: 15px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4);
+}
+.collection-btn .label { flex: 1; font-family: "Lilita One", sans-serif; font-size: 13px; color: #3e2a16; letter-spacing: 0.02em; }
+.collection-btn .label b { color: #c1325a; }
+.collection-btn .count {
+  font-family: "Lilita One", sans-serif; font-size: 12px; color: #fffbe9;
+  background: linear-gradient(180deg, #c1325a 0%, #8a1a38 100%);
+  padding: 4px 11px; border-radius: 999px;
+  border: 1.5px solid #5a1a2a; box-shadow: 0 2px 0 #5a1a2a;
+}
+
+/* ── Collection panel ── */
+.collection-panel {
+  position: absolute; inset: 0; z-index: 35;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #1c3010 0%, #2b4a18 100%);
+  animation: slideUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.collection-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 52px 16px 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 100%);
+  border-bottom: 1.5px solid rgba(255,255,255,0.1);
+}
+.collection-title { flex-shrink: 0; }
+.collection-header h2 {
+  font-family: "Lilita One", sans-serif; font-size: 18px;
+  color: #fffbe9; text-shadow: 0 2px 4px rgba(0,0,0,0.4); margin: 0;
+}
+.collection-header .sub { font-size: 10px; color: #9cc47b; font-family: "Lilita One", sans-serif; letter-spacing: 0.06em; }
+.collection-search {
+  flex: 1; min-width: 0;
+  height: 34px; padding: 0 12px;
+  background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 999px; color: #fffbe9; font-size: 13px;
+  font-family: "Lilita One", sans-serif; outline: none;
+}
+.collection-search::placeholder { color: rgba(255,255,255,0.35); }
+.collection-search:focus { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.4); }
+.collection-close {
+  width: 34px; height: 34px; border-radius: 999px; flex-shrink: 0;
+  background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25);
+  color: #fffbe9; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.collection-list {
+  flex: 1; overflow-y: auto; padding: 12px 12px 28px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.collection-list::-webkit-scrollbar { width: 4px; }
+.collection-list::-webkit-scrollbar-track { background: transparent; }
+.collection-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.harvest-card {
+  display: flex; align-items: center; gap: 12px;
+  border-radius: 18px; padding: 10px 14px 10px 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+  transition: transform 0.1s;
+}
+.harvest-card:active { transform: scale(0.98); }
+.harvest-plant {
+  position: relative; flex-shrink: 0;
+  width: 72px; height: 80px;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.harvest-sprite {
+  width: 72px; height: 72px; object-fit: contain;
+  image-rendering: pixelated; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4));
+}
+.harvest-plant-label {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 2px; pointer-events: none;
+}
+.harvest-plant-word {
+  font-size: 13px; font-weight: normal; line-height: 1;
+  text-shadow: 0 0 6px #fffde8, 0 0 6px #fffde8, 0 1px 3px rgba(0,0,0,0.3);
+  white-space: nowrap;
+  -webkit-text-stroke: 2.5px #fffde8;
+  paint-order: stroke fill;
+}
+.harvest-compliment { font-size: 13px; line-height: 1; filter: drop-shadow(0 0 4px #fffde8); }
+.harvest-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.harvest-info .lang-tag {
+  font-family: "Lilita One", sans-serif; font-size: 9px; letter-spacing: 0.08em;
+  padding: 2px 8px; border-radius: 999px; align-self: flex-start;
+  border: 1px solid; margin-bottom: 2px;
+}
+.harvest-ipa {
+  font-size: 11px; color: rgba(255,255,255,0.55); font-style: italic;
+  font-family: serif; line-height: 1.2;
+}
+.harvest-gloss {
+  font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.harvest-date {
+  font-family: "Lilita One", sans-serif; font-size: 9px;
+  color: rgba(255,255,255,0.35); letter-spacing: 0.04em; margin-top: 3px;
+}
+.collection-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  color: rgba(255,255,255,0.4);
+}
+.collection-empty .big { font-size: 48px; }
+.collection-empty p { font-family: "Lilita One", sans-serif; font-size: 13px; letter-spacing: 0.04em; text-align: center; padding: 0 24px; }
+
+/* ── Visit screen ── */
+.visit-empty {
+  position: absolute; inset: 0; top: 48px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; pointer-events: none;
+  font-family: "Lilita One", sans-serif; font-size: 13px;
+  color: #5a3e1a; letter-spacing: 0.04em; text-align: center;
+}
+
+/* Lesson screen */
+.lesson { position: absolute; inset: 0; background: linear-gradient(180deg, #faf6ee 0%, #f3ecdc 100%); display: flex; flex-direction: column; }
+.lesson .top { padding: 56px 16px 12px; display: flex; align-items: center; gap: 12px; }
+.lesson .bar { flex: 1; height: 14px; background: #fffbe9; border: 2px solid #5a3e1a; border-radius: 999px; overflow: hidden; box-shadow: inset 0 2px 0 rgba(0,0,0,0.1); }
+.lesson .fill { height: 100%; background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%); border-radius: 999px; transition: width 400ms ease; }
+.lesson .x { background: #fff; border: 2px solid #5a3e1a; padding: 6px; color: #3e2a16; cursor: pointer; border-radius: 12px; box-shadow: 0 3px 0 #5a3e1a; }
+.lesson .body { flex: 1; padding: 20px 18px; display: flex; flex-direction: column; overflow: hidden; }
+.lesson .lbl { font-family: "Lilita One", sans-serif; font-size: 11px; color: #6e4e2c; letter-spacing: 0.06em; text-transform: uppercase; }
+.lesson .big { font-family: "Caprasimo", serif; font-size: 54px; color: #283e23; line-height: 1; margin: 10px 0 6px; }
+.lesson .ipa { font-family: var(--font-mono); font-size: 13px; color: #6e4e2c; }
+.lesson .word-prompt { text-align: center; margin: auto 0; }
+.lesson .choices { display: flex; flex-direction: column; gap: 9px; margin-top: auto; }
+.lesson .choice { padding: 14px 18px; background: white; border: 2.5px solid #5a3e1a; border-radius: 16px; font-family: "Lilita One", sans-serif; font-size: 16px; color: #3e2a16; text-align: left; cursor: pointer; box-shadow: 0 4px 0 #5a3e1a; letter-spacing: 0.02em; }
+.lesson .choice.right { background: linear-gradient(180deg, #c8e6a8 0%, #87c25b 100%); border-color: #2b3f1a; color: #1c2c19; box-shadow: 0 4px 0 #2b3f1a; }
+.lesson .choice.wrong { background: linear-gradient(180deg, #f8c0bc 0%, #e08077 100%); border-color: #6c2018; color: #3e1410; box-shadow: 0 4px 0 #6c2018; }
+.lesson .feedback { margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: #c8e6a8; border: 2px solid #2b3f1a; display: flex; gap: 10px; align-items: center; box-shadow: 0 4px 0 #2b3f1a; }
+.lesson .feedback .msg { font-family: "Lilita One", sans-serif; font-size: 14px; color: #1c2c19; flex: 1; letter-spacing: 0.02em; }
+
+/* ── Flower sway ── */
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%       { transform: rotate(3deg); }
+}
+.sway { transform-origin: 0px 0px; transform-box: fill-box; animation: sway 3.4s ease-in-out infinite; }
+.flower { cursor: pointer; }
+.press-zoom { transform-box: fill-box; transform-origin: 50% 100%; transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.flower.pressed .press-zoom { transform: scale(1.55); }
+.flower.pressed .sway { animation-play-state: paused; }
+
+/* ── Pan hint ── */
+.pan-hint {
+  position: absolute; top: 220px; left: 50%; transform: translateX(-50%);
+  z-index: 5; background: rgba(40,30,12,0.78); color: #fffbe9;
+  font-family: "Lilita One", sans-serif; font-size: 11px;
+  padding: 5px 10px; border-radius: 999px; letter-spacing: 0.04em;
+  pointer-events: none;
+  animation: panHint 4s ease-in-out forwards;
+  border: 1.5px solid #fffbe9;
+}
+@keyframes panHint {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+}
+
+/* ── Leaderboard screen ── */
+/* ── Leaderboard ── */
+.lb-screen {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #a8d48a 0%, #7ab85a 40%, #5a9333 100%);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.lb-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 52px 16px 16px; flex-shrink: 0;
+}
+.lb-list {
+  flex: 1; overflow-y: auto; padding: 8px 12px 28px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.lb-list::-webkit-scrollbar { width: 4px; }
+.lb-list::-webkit-scrollbar-track { background: transparent; }
+.lb-list::-webkit-scrollbar-thumb { background: rgba(90,62,26,0.3); border-radius: 4px; }
+.lb-empty {
+  text-align: center; color: #5a3e1a; padding: 48px 0;
+  font-family: "Lilita One", sans-serif; font-size: 13px; letter-spacing: 0.04em;
+}
+.lb-row {
+  display: grid; grid-template-columns: 30px 40px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, #fffef6 0%, #fffbe9 100%);
+  border: 2px solid #5a3e1a; border-radius: 16px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 12px -4px rgba(40,30,12,0.25);
+  cursor: pointer; transition: transform 0.1s;
+}
+.lb-row:active { transform: translateY(2px); box-shadow: 0 1px 0 #5a3e1a; }
+.lb-row.you {
+  background: linear-gradient(180deg, #e8f5e2 0%, #d8ecce 100%);
+  border-color: #3e6534;
+  box-shadow: 0 3px 0 #3e6534, 0 6px 12px -4px rgba(40,30,12,0.25);
+  cursor: default;
+}
+.lb-row.top {
+  background: linear-gradient(180deg, #fffef0 0%, #fff8d4 100%);
+}
+.lb-rank { font-size: 18px; text-align: center; line-height: 1; }
+.lb-rank-num {
+  font-family: "Lilita One", sans-serif; font-size: 14px; color: #b09070;
+  display: flex; align-items: center; justify-content: center;
+}
+.lb-avatar {
+  width: 40px; height: 40px; border-radius: 999px; flex-shrink: 0;
+  border: 2.5px solid #5a3e1a;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Lilita One", sans-serif; font-size: 15px; color: #fff;
+  box-shadow: 0 2px 0 #5a3e1a;
+}
+.lb-info { min-width: 0; }
+.lb-name {
+  font-family: "Lilita One", sans-serif; font-size: 15px;
+  color: #3e2a16; line-height: 1.1;
+  display: flex; align-items: center; gap: 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lb-you-tag {
+  font-size: 9px; color: #3e6534; letter-spacing: 0.08em;
+  background: #d8ecce; padding: 2px 6px; border-radius: 999px;
+  border: 1.5px solid #3e6534; flex-shrink: 0;
+}
+.lb-streak { font-size: 11px; color: #8a6a44; margin-top: 2px; }
+.lb-score { text-align: right; flex-shrink: 0; }
+.lb-bloom-count {
+  font-family: "Lilita One", sans-serif; font-size: 15px; color: #3e2a16;
+}
+.lb-visit-hint { font-size: 10px; color: #b09070; letter-spacing: 0.04em; margin-top: 2px; }
+
+/* ── Collection load more ── */
+.collection-load-more {
+  width: 100%; padding: 11px;
+  background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 18px; cursor: pointer;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  color: rgba(255,255,255,0.5); letter-spacing: 0.05em;
+  transition: background 0.15s;
+}
+.collection-load-more:hover { background: rgba(255,255,255,0.14); }
+.collection-load-more:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Gift picker panel ── */
+.gift-picker {
+  position: absolute; inset: 0; z-index: 35;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #1c3010 0%, #2b4a18 100%);
+  animation: slideUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
+}
+.gift-picker-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 52px 16px 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 100%);
+  border-bottom: 1.5px solid rgba(255,255,255,0.1);
+}
+.gift-picker-title {
+  font-family: "Lilita One", sans-serif; font-size: 16px;
+  color: #fffbe9; text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gift-picker-sub {
+  font-size: 10px; color: #9cc47b; font-family: "Lilita One", sans-serif;
+  letter-spacing: 0.06em; margin-top: 1px;
+}
+.gift-picker-card {
+  align-items: center;
+}
+.gift-btn {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  transition: transform 0.1s, background 0.15s;
+}
+.gift-btn:active { transform: scale(0.9); }
+.gift-btn.sending { opacity: 0.5; cursor: not-allowed; font-size: 14px; color: #fffbe9; }
+.gift-btn.sent {
+  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
+  border-color: #2b3f1a; font-size: 16px; color: #fff;
+  cursor: default;
+}
+.gift-picker-err {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #f08080; margin-top: 2px; letter-spacing: 0.03em;
+}
+
+/* ── Visit screen interactions ── */
+.visit-react-row {
+  display: flex; gap: 4px; margin-top: 8px; justify-content: center;
+}
+.visit-react-btn {
+  width: 28px; height: 28px; border-radius: 999px;
+  border: 1.5px solid rgba(90,62,26,0.25);
+  background: rgba(255,255,255,0.75);
+  cursor: pointer; font-size: 15px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+  line-height: 1;
+}
+.visit-react-btn:active { transform: scale(1.3); }
+.visit-react-sent {
+  text-align: center; font-family: "Lilita One", sans-serif;
+  font-size: 11px; color: #3e6534; margin-top: 5px;
+  letter-spacing: 0.04em;
+}
+.visit-gift-btn {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: flex; align-items: center; gap: 6px;
+  padding: 9px 22px; border-radius: 999px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f0e8cc 100%);
+  border: 2px solid #5a3e1a;
+  box-shadow: 0 4px 0 #5a3e1a, 0 8px 18px -4px rgba(40,30,12,0.35);
+  font-family: "Lilita One", sans-serif; font-size: 13px;
+  color: #3e2a16; letter-spacing: 0.04em; cursor: pointer;
+  white-space: nowrap;
+}
+.visit-gift-btn:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 2px 0 #5a3e1a; }
+
+/* ── Language Picker ─────────────────────────────────────────────────────── */
+.lang-picker-wrap {
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #d4eecc 0%, #b8e0b0 100%);
+  padding: 16px;
+}
+.lang-picker-card {
+  background: #fffdf5; border-radius: 20px;
+  border: 2px solid #c8a96e;
+  box-shadow: 0 8px 32px rgba(30,50,20,0.18);
+  padding: 24px 20px 20px;
+  width: 100%; max-width: 340px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.lang-picker-header { text-align: center; }
+.lang-picker-header h2 {
+  font-family: 'Lilita One', sans-serif; font-size: 18px;
+  color: #1c2c19; margin: 8px 0 4px;
+}
+.lang-picker-header p {
+  font-family: 'Lilita One', sans-serif; font-size: 11px;
+  color: #8a6a3a; letter-spacing: 0.05em; margin: 0;
+}
+.lang-picker-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lang-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: 12px;
+  border: 2px solid #ddd3b8;
+  background: #faf6ec; cursor: pointer;
+  font-family: 'Lilita One', sans-serif; font-size: 13px;
+  color: #4a3a1a; transition: all 0.12s; position: relative;
+  text-align: left;
+}
+.lang-option:hover:not(:disabled) { border-color: #a07040; background: #f5edd8; }
+.lang-option.selected {
+  border-color: #3e6534; background: #e8f5e2; color: #1c4a10;
+}
+.lang-flag { font-size: 18px; line-height: 1; flex-shrink: 0; }
+.lang-label { flex: 1; }
+.lang-check {
+  font-size: 11px; color: #3e6534; font-weight: bold; flex-shrink: 0;
+}
+.lang-option.maxed { opacity: 0.4; cursor: not-allowed; }
+.lang-skip {
+  background: none; border: none; cursor: pointer;
+  font-family: 'Lilita One', sans-serif; font-size: 11px;
+  color: #8a6a3a; text-align: center; width: 100%;
+  padding: 4px; letter-spacing: 0.04em;
+}
+.lang-skip:hover { color: #4a3a1a; }
