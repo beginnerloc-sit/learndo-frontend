@@ -32,12 +32,23 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-# --- Check for Node.js ---
+# --- Ensure Node.js >= 18 (Vite requires it) ---
+REQUIRED_NODE=18
+install_node() {
+    log "Installing Node.js 20 via NodeSource..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+}
+
 if ! command -v node &> /dev/null; then
-    err "Node.js is not installed. Install it first:"
-    echo "  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
-    echo "  apt install -y nodejs"
-    exit 1
+    warn "Node.js not found — installing..."
+    install_node
+else
+    NODE_MAJOR=$(node -e "process.stdout.write(process.versions.node.split('.')[0])")
+    if [ "$NODE_MAJOR" -lt "$REQUIRED_NODE" ]; then
+        warn "Node $(node -v) is too old (need >= $REQUIRED_NODE) — upgrading..."
+        install_node
+    fi
 fi
 
 log "Using Node $(node -v) and npm $(npm -v)"
