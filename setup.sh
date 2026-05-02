@@ -75,6 +75,22 @@ if [ ! -f "dist/index.html" ]; then
     exit 1
 fi
 
+# --- Convert OG image SVG → PNG (required for iMessage, WhatsApp, Twitter) ---
+if [ -f "dist/og-image.svg" ]; then
+    if command -v rsvg-convert &>/dev/null; then
+        log "Converting og-image.svg → og-image.png (rsvg-convert)..."
+        rsvg-convert -w 1200 -h 630 dist/og-image.svg -o dist/og-image.png
+    elif command -v convert &>/dev/null; then
+        log "Converting og-image.svg → og-image.png (ImageMagick)..."
+        convert -size 1200x630 -background none dist/og-image.svg dist/og-image.png
+    else
+        log "Installing librsvg2-bin for SVG→PNG conversion..."
+        apt-get install -y librsvg2-bin
+        rsvg-convert -w 1200 -h 630 dist/og-image.svg -o dist/og-image.png
+    fi
+    log "og-image.png created ✓"
+fi
+
 # --- Prepare deploy directory ---
 log "Preparing $DEPLOY_DIR..."
 mkdir -p "$DEPLOY_DIR"
