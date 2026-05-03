@@ -66,6 +66,9 @@ function AppShell() {
           definitionLang: auth.user?.definition_lang ?? "english",
         }}
         canSkip={showSettings && !needsSetup}
+        musicPlaying={playing}
+        onToggleMusic={toggleMute}
+        onLogout={() => { clearAuth(); setAuth(null); setShowSettings(false); }}
         onDone={(updatedUser) => {
           if (updatedUser) {
             const newAuth = {
@@ -90,7 +93,6 @@ function AppShell() {
   } else {
     const goVisit  = (friend) => { setVisitFriend(friend); setTab("visit"); showSplash(1500); };
     const goGarden = () => { setTab("garden"); showSplash(1400); };
-    const logout   = () => { clearAuth(); setAuth(null); };
     const handleTranslateWin = (word, lang) => { setPendingPlant({ word, lang }); setTab("garden"); };
 
     activeScreen = (
@@ -113,10 +115,7 @@ function AppShell() {
             onLesson={() => setTab("lesson")}
             onVisit={() => setTab("friends")}
             onLeaderboard={() => setTab("leaderboard")}
-            onLogout={logout}
             onOpenSettings={() => setShowSettings(true)}
-            musicPlaying={playing}
-            onToggleMusic={toggleMute}
             pendingPlant={pendingPlant}
             onClearPending={() => setPendingPlant(null)}
           />

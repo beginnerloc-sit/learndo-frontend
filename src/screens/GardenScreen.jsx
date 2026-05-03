@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Users, LogOut, Settings, Music, VolumeX } from "lucide-react";
+import { Users, Settings } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GardenWorld, WORLD } from "../components/GardenWorld";
 import { QuizModal, buildQuiz } from "../components/QuizModal";
@@ -11,7 +11,7 @@ import { useCurrentUser } from "../hooks/useUser";
 import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant, useMovePlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
 
-export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, musicPlaying, onToggleMusic, pendingPlant, onClearPending }) {
+export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onOpenSettings, pendingPlant, onClearPending }) {
   const { data: fetchedUser } = useCurrentUser();
   const user = authUser ?? fetchedUser;
   const queryClient = useQueryClient();
@@ -45,7 +45,6 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [watering, setWatering]       = useState(null);
   const [showCollection, setShowCollection] = useState(false);
   const [showLab, setShowLab] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showPendingGifts, setShowPendingGifts] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef({ startX: 0, startY: 0, moved: false, hideTimer: null });
@@ -221,11 +220,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         <div className="sign"><h1>{user?.name ?? "Garden"}'s Garden</h1></div>
         <div style={{ flex: 1 }} />
         <button className="icon-btn" onClick={onVisit}><Users size={15} strokeWidth={2} /></button>
-        <button className="icon-btn" onClick={onToggleMusic} title={musicPlaying ? "Mute music" : "Play music"}>
-          {musicPlaying ? <Music size={15} strokeWidth={2} /> : <VolumeX size={15} strokeWidth={2} />}
-        </button>
         <button className="icon-btn" onClick={onOpenSettings}><Settings size={15} strokeWidth={2} /></button>
-        <button className="icon-btn" onClick={() => setShowLogoutConfirm(true)}><LogOut size={15} strokeWidth={2} /></button>
       </div>
 
       {/* Pannable stage */}
@@ -435,19 +430,6 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
         </div>
       )}
 
-      {showLogoutConfirm && (
-        <div className="modal-backdrop" style={{ zIndex: 50 }} onClick={() => setShowLogoutConfirm(false)}>
-          <div className="modal" style={{ textAlign: "center" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 36, marginBottom: 6 }}>🚪</div>
-            <div style={{ fontFamily: "'Lilita One', sans-serif", fontSize: 20, color: "#3e2a16", marginBottom: 6 }}>Log out?</div>
-            <div style={{ fontSize: 13, color: "#7a5c3a", marginBottom: 18, lineHeight: 1.4 }}>You'll need to sign back in to tend your garden.</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="hd-btn" style={{ flex: 1, fontSize: 13, background: "linear-gradient(180deg,#e0e0e0,#b0b0b0)", borderColor: "#777", boxShadow: "inset 0 2px 0 rgba(255,255,255,0.5), 0 4px 0 #777", color: "#444", textShadow: "none" }} onClick={() => setShowLogoutConfirm(false)}>CANCEL</button>
-              <button className="hd-btn" style={{ flex: 1, fontSize: 13, background: "linear-gradient(180deg,#e05555,#a51c1c)", borderColor: "#6a1212", boxShadow: "inset 0 2px 0 rgba(255,255,255,0.3), 0 4px 0 #6a1212", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }} onClick={() => { setShowLogoutConfirm(false); onLogout(); }}>LOG OUT</button>
-            </div>
-          </div>
-        </div>
-      )}
       {showPendingGifts && (
         <div className="modal-backdrop" style={{ zIndex: 50 }} onClick={() => setShowPendingGifts(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>

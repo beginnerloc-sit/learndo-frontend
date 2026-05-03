@@ -1565,7 +1565,10 @@ button { font-family: var(--font-body); }
 /* ── Breed mixing overlay (Phase 1 — while OpenAI thinks) ─────────────── */
 .mixing-overlay {
   position: absolute; inset: 0; z-index: 200;
-  pointer-events: none; overflow: hidden;
+  /* Block all input — user shouldn't accidentally trigger drags/clicks
+     on the lab elements behind during the cutscene */
+  pointer-events: auto;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% 40%, rgba(255, 220, 140, 0.32) 0%, rgba(40, 20, 60, 0.78) 65%);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1632,7 +1635,9 @@ button { font-family: var(--font-body); }
 /* ── Breed cutscene (Phase 2 — once result is ready) ─────────────────── */
 .cutscene {
   position: absolute; inset: 0; z-index: 200;
-  pointer-events: none; overflow: hidden;
+  /* Block all input during the reveal animation */
+  pointer-events: auto;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% 50%, rgba(255, 220, 140, 0.28) 0%, rgba(40, 20, 60, 0.78) 65%);
   animation: csBg 2200ms ease-in-out forwards;
@@ -2445,6 +2450,71 @@ button { font-family: var(--font-body); }
 }
 .settings-option .opt-check {
   font-size: 11px; color: #3e6534; font-weight: bold; flex-shrink: 0;
+}
+
+/* Action rows inside settings (Music toggle, Logout) */
+.settings-toggle-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: #faf6ec;
+  border: 2px solid #ddd3b8; border-radius: 14px;
+  cursor: pointer;
+  font-family: "Lilita One", sans-serif; font-size: 13px;
+  color: #4a3a1a;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
+}
+.settings-toggle-row:hover { background: #f5edd8; border-color: #a07040; }
+.settings-toggle-row:active { transform: translateY(1px); }
+.settings-toggle-row.on {
+  background: #e8f5e2; border-color: #3e6534; color: #1c4a10;
+}
+.settings-toggle-row.danger {
+  color: #a83a4a;
+}
+.settings-toggle-row.danger:hover {
+  background: #fbe5e2; border-color: #a83a4a;
+}
+.settings-toggle-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 999px;
+  background: rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+.settings-toggle-row.on .settings-toggle-icon { background: #d8ecce; color: #3e6534; }
+.settings-toggle-row.danger .settings-toggle-icon { background: #fbe5e2; color: #a83a4a; }
+.settings-toggle-label {
+  flex: 1; min-width: 0; text-align: left;
+  font-family: "Plus Jakarta Sans", sans-serif; font-size: 13px;
+  color: inherit; font-weight: 500;
+}
+.settings-toggle-label b {
+  font-family: "Lilita One", sans-serif; letter-spacing: 0.04em;
+}
+
+/* iOS-style toggle pill */
+.settings-toggle-pill {
+  width: 38px; height: 22px; border-radius: 999px;
+  background: #d6c7a3; border: 1.5px solid #b09070;
+  position: relative; flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s;
+}
+.settings-toggle-pill.on {
+  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
+  border-color: #2b3f1a;
+}
+.settings-toggle-knob {
+  position: absolute; top: 1px; left: 1px;
+  width: 16px; height: 16px; border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  transition: transform 0.18s ease;
+}
+.settings-toggle-pill.on .settings-toggle-knob { transform: translateX(16px); }
+
+.settings-toggle-arrow {
+  font-size: 22px; color: inherit; flex-shrink: 0;
+  font-family: serif; line-height: 1;
 }
 
 /* ── Language Picker (legacy, still used as a smaller picker) ─────────────── */

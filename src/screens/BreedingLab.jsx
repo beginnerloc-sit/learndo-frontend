@@ -54,6 +54,10 @@ export function BreedingLab({ onClose, onPlantNewWord }) {
     return () => clearTimeout(t);
   }, [search]);
 
+  // Whenever a breeding phase begins or ends, clear any in-flight drag.
+  // (Prevents stale drag state surviving across the cutscene → result modal.)
+  useEffect(() => { if (phase) setDrag(null); }, [phase]);
+
   const slot0Ref = useRef(null);
   const slot1Ref = useRef(null);
 

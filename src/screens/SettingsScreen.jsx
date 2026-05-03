@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Music, VolumeX, LogOut } from "lucide-react";
 import { updateSettings } from "../api/users";
 
 const LANGUAGES = [
@@ -39,7 +39,7 @@ const TOPICS = [
   { code: "cooking",      label: "Cooking",      emoji: "👩‍🍳" },
 ];
 
-export function SettingsScreen({ initial = {}, onDone, canSkip = false }) {
+export function SettingsScreen({ initial = {}, onDone, canSkip = false, musicPlaying = false, onToggleMusic, onLogout }) {
   const [studyLangs, setStudyLangs] = useState(new Set(initial.langPrefs ?? []));
   const [vocabLevel, setVocabLevel] = useState(initial.vocabLevel ?? "");
   const [topicPrefs, setTopicPrefs] = useState(new Set(initial.topicPrefs ?? []));
@@ -193,6 +193,43 @@ export function SettingsScreen({ initial = {}, onDone, canSkip = false }) {
         >
           {loading ? "SAVING…" : (canSkip ? "SAVE" : "LET'S GO →")}
         </button>
+
+        {/* Music + Logout — only available after first-time setup */}
+        {canSkip && (
+          <>
+            <section className="settings-section">
+              <h3>Music</h3>
+              <button
+                className={`settings-toggle-row${musicPlaying ? " on" : ""}`}
+                onClick={onToggleMusic}
+              >
+                <span className="settings-toggle-icon">
+                  {musicPlaying ? <Music size={18} strokeWidth={2.5} /> : <VolumeX size={18} strokeWidth={2.5} />}
+                </span>
+                <span className="settings-toggle-label">
+                  Background music is <b>{musicPlaying ? "ON" : "OFF"}</b>
+                </span>
+                <span className={`settings-toggle-pill${musicPlaying ? " on" : ""}`}>
+                  <span className="settings-toggle-knob" />
+                </span>
+              </button>
+            </section>
+
+            <section className="settings-section">
+              <h3>Account</h3>
+              <button
+                className="settings-toggle-row danger"
+                onClick={() => {
+                  if (confirm("Log out of Learndo?")) onLogout?.();
+                }}
+              >
+                <span className="settings-toggle-icon"><LogOut size={18} strokeWidth={2.5} /></span>
+                <span className="settings-toggle-label"><b>Log out</b></span>
+                <span className="settings-toggle-arrow">›</span>
+              </button>
+            </section>
+          </>
+        )}
       </div>
     </div>
   );
