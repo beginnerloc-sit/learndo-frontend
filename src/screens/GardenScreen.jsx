@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GardenWorld, WORLD } from "../components/GardenWorld";
 import { QuizModal, buildQuiz } from "../components/QuizModal";
 import { CollectionPanel } from "../components/CollectionPanel";
+import { BreedingLab } from "./BreedingLab";
 import { fetchQuiz, fetchWordQuiz, normPlant } from "../api/vocabulary";
 import { fetchPendingGifts, plantPendingGift } from "../api/leaderboard";
 import { useCurrentUser } from "../hooks/useUser";
@@ -43,6 +44,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [waterQuiz, setWaterQuiz]     = useState(null);
   const [watering, setWatering]       = useState(null);
   const [showCollection, setShowCollection] = useState(false);
+  const [showLab, setShowLab] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showPendingGifts, setShowPendingGifts] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -406,32 +408,31 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           <button className="hd-btn" style={{ background: "linear-gradient(180deg,#e0e0e0,#aaa)", borderColor: "#555", color: "#fff" }} onClick={() => { setMoving(null); setGhost(g => ({ ...g, visible: false })); }}>CANCEL</button>
         </div>
       ) : (
-        <>
+        <div className="bottom-actions">
+          <button className="action-btn action-lab" onClick={() => setShowLab(true)}>
+            <div className="action-icon"><span>🧬</span></div>
+            <div className="action-label"><b>BREED</b></div>
+          </button>
           <button
-            className={`seed-peek${seedLoading ? " seed-loading" : ""}${seedError ? " seed-quota" : ""}`}
+            className={`action-btn action-seed${seedLoading ? " loading" : ""}${seedError ? " quota" : ""}`}
             onClick={handleNewSeed}
             disabled={seedLoading || !!seedError}
+            title={seedError || ""}
           >
-            <div className="pouch">
-              {seedError ? "🌅" : seedLoading ? <span className="seed-sprout">🌱</span> : "🌰"}
+            <div className="action-icon">
+              <span className={seedLoading ? "seed-sprout" : ""}>
+                {seedError ? "🌅" : seedLoading ? "🌱" : "🌰"}
+              </span>
             </div>
-            <div className="label">
-              {seedError
-                ? <span style={{ fontSize: 11, lineHeight: 1.2 }}>{seedError}</span>
-                : seedLoading
-                  ? <b>GROWING…</b>
-                  : <><b>NEW SEED</b> · answer to plant</>}
+            <div className="action-label">
+              {seedError ? <b>LIMIT</b> : seedLoading ? <b>GROWING…</b> : <b>NEW SEED</b>}
             </div>
-            <span className="plant-cta">
-              {seedError ? "🚫" : seedLoading ? <span className="seed-dots"><span/><span/><span/></span> : "QUIZ"}
-            </span>
           </button>
-          <button className="collection-btn" onClick={() => setShowCollection(true)}>
-            <div className="icon">🌸</div>
-            <div className="label"><b>COLLECTION</b> · harvested words</div>
-            <span className="count">{plantedSeeds.filter(s => s.stage >= 4).length > 0 ? "VIEW" : "VIEW"}</span>
+          <button className="action-btn action-collection" onClick={() => setShowCollection(true)}>
+            <div className="action-icon"><span>🌸</span></div>
+            <div className="action-label"><b>COLLECTION</b></div>
           </button>
-        </>
+        </div>
       )}
 
       {showLogoutConfirm && (
@@ -478,7 +479,21 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           </div>
         </div>
       )}
-      {showCollection && <CollectionPanel onClose={() => setShowCollection(false)} currentUser={user} />}
+      {showCollection && (
+        <CollectionPanel
+          onClose={() => setShowCollection(false)}
+          currentUser={user}
+        />
+      )}
+      {showLab && (
+        <BreedingLab
+          onClose={() => setShowLab(false)}
+          onPlantNewWord={(p) => {
+            setShowLab(false);
+            setPlanting({ word: p.word, lang: p.lang, langColor: p.langColor });
+          }}
+        />
+      )}
       {quiz && <QuizModal quiz={quiz} onClose={() => setQuiz(null)} onWin={handleWin} />}
       {waterQuiz && (
         <QuizModal

@@ -67,6 +67,25 @@ export async function plantPendingGift(giftId, x, y) {
   return res.json();
 }
 
+export async function crossbreedWords(word1, word2) {
+  const res = await fetch(`${BASE}/garden/crossbreed`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ word1, word2 }),
+  });
+  if (res.status === 429) {
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.detail || "Daily seed limit reached");
+    err.code = "QUOTA";
+    throw err;
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to crossbreed");
+  }
+  return res.json();
+}
+
 export async function giftSeed(toUserId, word) {
   const res = await fetch(`${BASE}/garden/gift`, {
     method: "POST",

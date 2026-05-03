@@ -193,6 +193,7 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
     }
   };
 
+
   const title = isFriend ? `${friend.name}'s Collection` : "My Collection";
 
   return (
@@ -315,6 +316,7 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
           )}
         </>
       )}
+
     </div>
   );
 }

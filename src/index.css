@@ -139,7 +139,7 @@ button { font-family: var(--font-body); }
 
 /* ── Pannable world stage ── */
 .stage {
-  position: absolute; left: 0; right: 0; top: 48px; bottom: 152px;
+  position: absolute; left: 0; right: 0; top: 48px; bottom: 86px;
   overflow: hidden;
 }
 .world {
@@ -327,7 +327,7 @@ button { font-family: var(--font-body); }
 
 /* ── Plant banner (planting mode) ── */
 .plant-banner {
-  position: absolute; left: 12px; right: 12px; bottom: 86px;
+  position: absolute; left: 12px; right: 12px; bottom: 14px;
   display: flex; align-items: center; gap: 10px; padding: 8px 12px;
   background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
   border: 2.5px solid #5a9333; border-radius: 18px;
@@ -560,6 +560,92 @@ button { font-family: var(--font-body); }
   background: linear-gradient(180deg, #c1325a 0%, #8a1a38 100%);
   padding: 4px 11px; border-radius: 999px;
   border: 1.5px solid #5a1a2a; box-shadow: 0 2px 0 #5a1a2a;
+}
+
+/* Breeding lab pill — sits above .seed-peek (which is at bottom: 86px) */
+.lab-btn {
+  position: absolute; left: 12px; right: 12px; bottom: 158px;
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 14px 5px 5px;
+  background: linear-gradient(180deg, #fff8e8 0%, #efdcf3 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 8px 14px -6px rgba(40,30,12,0.35);
+  cursor: pointer; z-index: 6;
+}
+.lab-btn .icon {
+  width: 32px; height: 32px; border-radius: 999px; flex-shrink: 0;
+  background: linear-gradient(180deg, #d4a3ff 0%, #6b2fa0 100%);
+  border: 2px solid #5a3e1a; display: grid; place-items: center; font-size: 15px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4);
+}
+.lab-btn .label { flex: 1; font-family: "Lilita One", sans-serif; font-size: 13px; color: #3e2a16; letter-spacing: 0.02em; }
+.lab-btn .label b { color: #6b2fa0; }
+.lab-btn .count {
+  font-family: "Lilita One", sans-serif; font-size: 12px; color: #fffbe9;
+  background: linear-gradient(180deg, #6b2fa0 0%, #4a1a8e 100%);
+  padding: 4px 11px; border-radius: 999px;
+  border: 1.5px solid #2a0e5a; box-shadow: 0 2px 0 #2a0e5a;
+}
+
+/* ── Bottom actions row — 3 compact vertical pills (Breed / Seed / Collection) ── */
+.bottom-actions {
+  position: absolute; left: 12px; right: 12px; bottom: 14px;
+  display: flex; gap: 8px;
+  z-index: 6;
+}
+.action-btn {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 7px 4px 8px;
+  background: linear-gradient(180deg, #fff 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 16px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 12px -4px rgba(40,30,12,0.3);
+  cursor: pointer;
+  transition: transform 0.08s;
+  font-family: inherit;
+}
+.action-btn:active:not(:disabled) {
+  transform: translateY(2px); box-shadow: 0 1px 0 #5a3e1a;
+}
+.action-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+.action-icon {
+  width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 18px;
+  border: 2px solid #5a3e1a;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4);
+  line-height: 1;
+}
+.action-label {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #3e2a16; letter-spacing: 0.04em;
+  text-align: center; line-height: 1.1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.action-label b { font-weight: 400; }
+
+/* Per-action accent colors */
+.action-lab        .action-icon  { background: linear-gradient(180deg, #d4a3ff 0%, #6b2fa0 100%); }
+.action-lab        .action-label b { color: #6b2fa0; }
+.action-seed       .action-icon  { background: linear-gradient(180deg, #ffe08a 0%, #c89a2e 100%); }
+.action-seed       .action-label b { color: #6e4e0e; }
+.action-collection .action-icon  { background: linear-gradient(180deg, #ff9ebc 0%, #c1325a 100%); }
+.action-collection .action-label b { color: #c1325a; }
+
+/* Loading wiggle on the seed icon while a quiz is being generated */
+.action-seed.loading .action-icon {
+  background: linear-gradient(180deg, #c8e6a8 0%, #5a9333 100%);
+  animation: actionPulse 1s ease-in-out infinite alternate;
+}
+.action-seed.loading .seed-sprout {
+  display: inline-block; animation: sproutPop 0.6s ease-in-out infinite alternate;
+}
+@keyframes actionPulse {
+  from { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 0 6px -1px rgba(90,147,51,0.5); }
+  to   { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 0 14px 1px rgba(90,147,51,0.85); }
+}
+.action-seed.quota .action-icon {
+  background: linear-gradient(180deg, #d6c7a3 0%, #8a6a3a 100%);
 }
 
 /* ── Collection panel (game theme — cream paper, brown borders, wood plank) ── */
@@ -1233,6 +1319,473 @@ button { font-family: var(--font-body); }
   font-family: "Lilita One", sans-serif; font-size: 15px; color: #3e2a16;
 }
 .lb-visit-hint { font-size: 10px; color: #b09070; letter-spacing: 0.04em; margin-top: 2px; }
+
+/* ── Breeding Lab (garden-themed: sky → grass + cream paper + wood bench) ─ */
+.lab-screen {
+  position: absolute; inset: 0; z-index: 40;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(140% 60% at 50% 0%, #c8e8f5 0%, #d8edd2 35%, #b0d28f 70%, #8db867 100%);
+  color: #3e2a16;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+.lab-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 50px 12px 8px;
+  flex-shrink: 0;
+}
+
+/* Stage with the 2 slots + breed button */
+.lab-stage {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; padding: 8px 12px;
+}
+.lab-slot {
+  flex: 1; min-width: 0; max-width: 150px;
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(180deg, #fffef6 0%, #f3ecdc 100%);
+  border: 3px dashed #b89260;
+  border-radius: 22px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 14px -4px rgba(40,30,12,0.25);
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.lab-slot.filled {
+  border-style: solid;
+  border-color: #5a3e1a;
+}
+.lab-slot.hover {
+  border-color: #5a9333;
+  background: linear-gradient(180deg, #e8f5e2 0%, #c8e6a8 100%);
+  transform: scale(1.04);
+  box-shadow: 0 3px 0 #2b3f1a, 0 0 16px -2px rgba(90,147,51,0.6);
+}
+.lab-slot-empty {
+  text-align: center; color: #b09070;
+  font-family: "Lilita One", sans-serif;
+}
+.lab-slot-num {
+  font-size: 38px; line-height: 1; color: #d6b167;
+  margin-bottom: 4px;
+}
+.lab-slot-hint {
+  font-size: 9px; letter-spacing: 0.06em; color: #8a6a3a;
+}
+.lab-slot-img {
+  width: 90%; height: auto; max-height: 70%;
+  object-fit: contain; image-rendering: pixelated;
+  filter: drop-shadow(0 3px 5px rgba(40,30,12,0.3));
+  pointer-events: none;
+}
+.lab-slot-word {
+  margin-top: 4px; font-size: 14px; line-height: 1.1;
+  -webkit-text-stroke: 2px #fffde8; paint-order: stroke fill;
+  text-shadow: 0 1px 2px rgba(40,30,12,0.2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 92%;
+  pointer-events: none;
+}
+.lab-slot-clear {
+  position: absolute; top: 6px; right: 6px; z-index: 5;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  color: #5a3e1a; border: 1.5px solid #5a3e1a;
+  font-size: 14px; line-height: 1; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 0 #5a3e1a;
+}
+.lab-slot-clear:active { transform: translateY(1px); box-shadow: 0 1px 0 #5a3e1a; }
+
+/* Middle column with BREED button */
+.lab-middle {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.breed-btn {
+  width: 78px; height: 78px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffd96a 0%, #e8a91a 100%);
+  border: 3px solid #6e4e0e;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.45),
+              0 4px 0 #6e4e0e,
+              0 8px 14px -4px rgba(40,30,12,0.45);
+  color: #4a2f08; cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: "Lilita One", sans-serif; letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  transition: transform 0.08s;
+}
+.breed-btn .breed-emoji { font-size: 24px; line-height: 1; }
+.breed-btn .breed-text  { font-size: 11px; margin-top: 3px; }
+.breed-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.breed-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), 0 2px 0 #6e4e0e; }
+.breed-btn.busy { animation: breedSpin 1.2s linear infinite; }
+@keyframes breedSpin {
+  0%, 100% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), 0 4px 0 #6e4e0e, 0 0 14px -2px rgba(232,169,26,0.7); }
+  50%      { box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), 0 4px 0 #6e4e0e, 0 0 28px 2px rgba(255,217,106,0.9); }
+}
+.lab-swap {
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  color: #3e2a16; border: 2px solid #5a3e1a;
+  border-radius: 999px; padding: 4px 12px; cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 2px 0 #5a3e1a;
+}
+.lab-swap:active { transform: translateY(1px); box-shadow: 0 1px 0 #5a3e1a; }
+
+/* Bench header — label + search */
+.lab-bench-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 4px;
+  flex-shrink: 0;
+}
+.lab-bench-label {
+  flex: 1; min-width: 0;
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #5a3e1a; letter-spacing: 0.06em; text-transform: uppercase;
+  text-align: left;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.lab-quota-note { color: #b53a6a; font-size: 9px; }
+.lab-bench-search {
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 4px 8px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  box-shadow: 0 2px 0 #5a3e1a, inset 0 1px 0 rgba(255,255,255,0.4);
+  color: #5a3e1a;
+}
+.lab-bench-search input {
+  background: transparent; border: 0; outline: none;
+  font-family: "Lilita One", sans-serif; font-size: 11px;
+  color: #3e2a16; letter-spacing: 0.02em;
+  width: 160px; min-width: 0;
+}
+.lab-bench-search input::placeholder { color: #b09070; }
+.lab-bench-search-clear {
+  width: 16px; height: 16px; border-radius: 999px;
+  background: rgba(90,62,26,0.15); color: #5a3e1a;
+  border: 0; cursor: pointer; padding: 0;
+  font-size: 14px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Bench — vertical 3-row grid on a wood-plank workbench (FIXED height) */
+.lab-bench {
+  flex-shrink: 0; flex-grow: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  align-content: start;
+  gap: 8px;
+  padding: 10px 12px 18px;
+  /* Fixed height — always 3 rows tall regardless of item count */
+  height: 330px;
+  overflow-y: auto; overflow-x: hidden;
+  background: linear-gradient(180deg, #dcc28e 0%, #b89260 100%);
+  border-top: 3px solid #5a3e1a;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(90,62,26,0.45) transparent;
+}
+.lab-bench::-webkit-scrollbar { width: 6px; }
+.lab-bench::-webkit-scrollbar-thumb { background: rgba(90,62,26,0.45); border-radius: 4px; }
+.lab-bench-empty {
+  grid-column: 1 / -1;
+  text-align: center; padding: 22px 8px;
+  color: #5a3e1a;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+}
+.lab-bench-empty b { color: #b53a6a; }
+.lab-bench-card {
+  width: 100%; height: 96px;
+  background: linear-gradient(180deg, #fffef6 0%, #fff8e8 100%);
+  border: 2px solid #5a3e1a;
+  border-radius: 14px;
+  box-shadow: 0 2px 0 #5a3e1a;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 4px;
+  cursor: grab;
+  touch-action: none;
+  transition: transform 0.1s, border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.lab-bench-card:hover { border-color: #3e6534; box-shadow: 0 2px 0 #2b3f1a; transform: translateY(-2px); }
+.lab-bench-card:active { cursor: grabbing; }
+.lab-bench-card.hidden { opacity: 0.25; }
+.lab-bench-img {
+  width: 100%; height: 60%; object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 2px rgba(40,30,12,0.3));
+  pointer-events: none;
+}
+.lab-bench-word {
+  font-size: 10px; line-height: 1.1; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  -webkit-text-stroke: 1.5px #fffde8; paint-order: stroke fill;
+  pointer-events: none;
+}
+.lab-bench-more {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  padding: 8px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  color: #3e2a16;
+  border: 2px dashed #5a3e1a; border-radius: 14px;
+  font-family: "Lilita One", sans-serif; font-size: 11px; cursor: pointer;
+}
+
+/* Drag ghost */
+.lab-drag-ghost {
+  position: fixed; z-index: 200; pointer-events: none;
+  transform: scale(1.1) rotate(-3deg);
+  filter: drop-shadow(0 8px 14px rgba(40,30,12,0.4));
+}
+.lab-bench-card.ghost {
+  background: linear-gradient(180deg, #fff5d6 0%, #ffe08a 100%);
+  border-color: #6e4e0e;
+}
+
+.lab-error {
+  position: absolute; left: 50%; bottom: 130px; transform: translateX(-50%);
+  background: #f8d4cc; color: #a83a4a;
+  border: 2px solid #a83a4a; border-radius: 12px;
+  padding: 8px 14px; z-index: 300;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  box-shadow: 0 3px 0 #a83a4a;
+}
+
+.cb-quota-hint {
+  text-align: center; margin-top: 8px;
+  font-family: "Lilita One", sans-serif; font-size: 9px;
+  color: #b09070; letter-spacing: 0.04em;
+}
+
+/* ── Breed mixing overlay (Phase 1 — while OpenAI thinks) ─────────────── */
+.mixing-overlay {
+  position: absolute; inset: 0; z-index: 200;
+  pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 220, 140, 0.32) 0%, rgba(40, 20, 60, 0.78) 65%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px;
+  animation: mixFadeIn 0.3s ease;
+}
+@keyframes mixFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.mix-hourglass {
+  font-size: 80px; line-height: 1;
+  filter: drop-shadow(0 0 24px rgba(255, 220, 140, 0.7));
+  /* Tilt back-and-forth like an hourglass being flipped */
+  animation: mixHourglass 1.8s ease-in-out infinite;
+  transform-origin: center center;
+}
+@keyframes mixHourglass {
+  0%   { transform: rotate(0deg); }
+  45%  { transform: rotate(180deg); }
+  50%  { transform: rotate(180deg); }
+  95%  { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.mix-label {
+  font-family: "Lilita One", sans-serif;
+  font-size: 18px; color: #ffe08a;
+  letter-spacing: 0.12em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  animation: mixLabelPulse 1.4s ease-in-out infinite alternate;
+}
+@keyframes mixLabelPulse {
+  from { opacity: 0.55; letter-spacing: 0.12em; }
+  to   { opacity: 1;    letter-spacing: 0.18em; }
+}
+
+.mix-parents {
+  display: flex; align-items: center; gap: 14px;
+  animation: mixParentsFadeIn 0.4s ease 0.1s backwards;
+}
+@keyframes mixParentsFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mix-parents .lab-bench-card {
+  cursor: default;
+  animation: mixParentBob 1.6s ease-in-out infinite;
+}
+.mix-parents .lab-bench-card:nth-child(1) { animation-delay: 0s; }
+.mix-parents .lab-bench-card:nth-child(3) { animation-delay: 0.8s; }
+@keyframes mixParentBob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-8px) rotate(3deg); }
+}
+.mix-plus {
+  font-size: 26px;
+  filter: drop-shadow(0 0 6px rgba(255, 220, 140, 0.7));
+  animation: mixPlusSpin 1.8s linear infinite;
+}
+@keyframes mixPlusSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Breed cutscene (Phase 2 — once result is ready) ─────────────────── */
+.cutscene {
+  position: absolute; inset: 0; z-index: 200;
+  pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 220, 140, 0.28) 0%, rgba(40, 20, 60, 0.78) 65%);
+  animation: csBg 2200ms ease-in-out forwards;
+}
+@keyframes csBg {
+  0%   { opacity: 0; }
+  10%, 95% { opacity: 1; }
+  100% { opacity: 1; }    /* keep dim until React unmounts the cutscene */
+}
+
+.cs-card {
+  position: absolute; top: 50%; left: 50%;
+  width: 110px; height: 140px;
+  margin-left: -55px; margin-top: -70px;
+  background: linear-gradient(180deg, #fffef6 0%, #fff8e8 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 16px;
+  box-shadow: 0 8px 18px -2px rgba(0,0,0,0.55), 0 3px 0 #5a3e1a;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 6px 6px 8px;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+.cs-card-img {
+  width: 80%; height: 70%; object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 4px rgba(40,30,12,0.4));
+  pointer-events: none;
+}
+.cs-card-word {
+  font-size: 13px; line-height: 1; margin-top: 4px;
+  -webkit-text-stroke: 2px #fffde8; paint-order: stroke fill;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+
+.cs-card-left  { animation: csCardLeft  2200ms cubic-bezier(0.45, 0, 0.4, 1) forwards; }
+.cs-card-right { animation: csCardRight 2200ms cubic-bezier(0.45, 0, 0.4, 1) forwards; }
+@keyframes csCardLeft {
+  0%   { transform: translateX(-100vw) rotate(-25deg);                      opacity: 0; }
+  12%  { transform: translateX(-150px) rotate(-8deg);                       opacity: 1; }
+  32%  { transform: translateX(-70px)  rotate(0deg);                        opacity: 1; }
+  52%  { transform: translateX(0) rotateY(360deg) scale(1.12);              opacity: 1; }
+  70%  { transform: translateX(0) rotateY(720deg) scale(0.6);               opacity: 0.6; }
+  82%, 100% { transform: translateX(0) rotateY(900deg) scale(0);            opacity: 0; }
+}
+@keyframes csCardRight {
+  0%   { transform: translateX(100vw)  rotate(25deg);                       opacity: 0; }
+  12%  { transform: translateX(150px)  rotate(8deg);                        opacity: 1; }
+  32%  { transform: translateX(70px)   rotate(0deg);                        opacity: 1; }
+  52%  { transform: translateX(0) rotateY(-360deg) scale(1.12);             opacity: 1; }
+  70%  { transform: translateX(0) rotateY(-720deg) scale(0.6);              opacity: 0.6; }
+  82%, 100% { transform: translateX(0) rotateY(-900deg) scale(0);           opacity: 0; }
+}
+
+.cs-flash {
+  position: absolute; top: 50%; left: 50%;
+  width: 0; height: 0;
+  background: radial-gradient(circle,
+    rgba(255, 250, 220, 1)  0%,
+    rgba(255, 220, 120, 0.7) 25%,
+    rgba(255, 130, 200, 0.45) 50%,
+    transparent 75%);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: csFlash 2200ms ease-out forwards;
+  filter: blur(2px);
+}
+@keyframes csFlash {
+  0%, 70% { width: 0;    height: 0;    opacity: 0; }
+  78%     { width: 240px; height: 240px; opacity: 1; }
+  88%     { width: 600px; height: 600px; opacity: 0.55; }
+  100%    { width: 900px; height: 900px; opacity: 0; }
+}
+
+.cs-sparkles {
+  position: absolute; top: 50%; left: 50%;
+  width: 0; height: 0;
+}
+.cs-sparkles span {
+  position: absolute; top: 0; left: 0;
+  font-size: 24px;
+  filter: drop-shadow(0 0 6px rgba(255,230,140,0.85));
+  opacity: 0;
+  animation: csSparkle 2200ms ease-out forwards;
+}
+@keyframes csSparkle {
+  0%, 72% { transform: rotate(var(--angle, 0deg)) translateY(0) scale(0); opacity: 0; }
+  80%     { transform: rotate(var(--angle, 0deg)) translateY(-20px) scale(1); opacity: 1; }
+  100%    { transform: rotate(var(--angle, 0deg)) translateY(-220px) scale(1.6); opacity: 0; }
+}
+
+/* Result modal styling (shared with old design) */
+.modal.crossbreed-modal {
+  max-width: 340px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 240, 168, 0.4) 0%, transparent 60%),
+    linear-gradient(180deg, #fffdf5 0%, #f3ecdc 100%);
+  animation: csReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes csReveal {
+  0%   { opacity: 0; transform: scale(0.3) rotate(-12deg); }
+  60%  { opacity: 1; transform: scale(1.06) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.cb-parents {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 8px;
+  font-family: "Caprasimo", serif; font-size: 16px;
+  color: #6e4e2c; padding: 8px 0 4px;
+}
+.cb-plus { font-size: 18px; color: #d4267a; }
+.cb-arrow {
+  width: 100%; text-align: center; font-size: 22px;
+  color: #d4267a; line-height: 1;
+}
+.cb-result-word {
+  text-align: center; font-size: 32px; line-height: 1.1;
+  margin: 8px 0 4px;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.05);
+  animation: csWordPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s backwards;
+}
+@keyframes csWordPop {
+  0%   { opacity: 0; transform: scale(0); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.cb-ipa {
+  text-align: center; font-family: var(--font-mono), monospace;
+  font-size: 12px; color: #6e4e2c; margin-bottom: 4px;
+}
+.cb-gloss {
+  text-align: center; font-family: "Caprasimo", serif;
+  font-size: 14px; color: #1c2c19; line-height: 1.35;
+  padding: 0 8px;
+}
+.cb-connection {
+  margin: 10px 0 0; padding: 8px 10px;
+  background: #fff5d6; border: 1.5px solid #d6b167; border-radius: 12px;
+  font-size: 11px; color: #6e4e2c; line-height: 1.4;
+  text-align: center;
+}
+.cb-actions {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+.crossbreed-error {
+  position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%);
+  background: #f8d4cc; color: #a83a4a;
+  border: 2px solid #a83a4a; border-radius: 12px;
+  padding: 8px 14px; z-index: 60;
+  font-family: "Lilita One", sans-serif; font-size: 12px;
+  box-shadow: 0 3px 0 #a83a4a;
+}
 
 /* ── Collection load more ── */
 .collection-load-more {
