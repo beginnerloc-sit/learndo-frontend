@@ -183,6 +183,7 @@ class GardenScene extends Phaser.Scene {
     this.setupCamera();
     this.setupInput();
     this.setupWeather();
+    this.setupExternalResetBridge();
 
     // Register scene so React can call updateFromProps
     reg.set("scene", this);
@@ -538,26 +539,27 @@ class GardenScene extends Phaser.Scene {
   // ── Input (drag + plant/select tap) ─────────────────────────────────────
   setupInput() {
     const cam = this.cameras.main;
-    let drag = null, hasMoved = false;
+    this._drag = null;
+    this._hasMoved = false;
 
     this.input.on("pointerdown", (p) => {
-      drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY };
-      hasMoved = false;
+      this._drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY };
+      this._hasMoved = false;
       this.plantClicked = false;
     });
 
     this.input.on("pointermove", (p) => {
-      if (!drag) return;
-      const dx = p.x - drag.x, dy = p.y - drag.y;
-      if (Math.hypot(dx, dy) > 4) hasMoved = true;
-      cam.setScroll(drag.sx - dx, drag.sy - dy);
+      if (!this._drag) return;
+      const dx = p.x - this._drag.x, dy = p.y - this._drag.y;
+      if (Math.hypot(dx, dy) > 4) this._hasMoved = true;
+      cam.setScroll(this._drag.sx - dx, this._drag.sy - dy);
       this.emitCam();
     });
 
     this.input.on("pointerup", (p) => {
       const wasPlantClick = this.plantClicked;
       this.plantClicked = false;
-      if (drag && !hasMoved && !wasPlantClick) {
+      if (this._drag && !this._hasMoved && !wasPlantClick) {
         const wx = p.x + cam.scrollX - 450;
         const wy = p.y + cam.scrollY - 100;
         if (this.propsRef.current.planting) {
@@ -568,10 +570,44 @@ class GardenScene extends Phaser.Scene {
           this.callbacksRef.current.setPressed?.(null);
         }
       }
-      drag = null;
+      this._drag = null;
     });
 
-    this.input.on("pointercancel", () => { drag = null; });
+    this.input.on("pointercancel", () => { this._drag = null; this._hasMoved = false; });
+  }
+
+  // Bridge: React dispatches a "reset-input" CustomEvent on .stage when an
+  // overlay closes; we hook it up here so the scene resets cleanly.
+  setupExternalResetBridge() {
+    const el = this.vpRef?.current;
+    if (!el) return;
+    this._resetHandler = () => this.resetInput();
+    el.addEventListener("reset-input", this._resetHandler);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      el.removeEventListener("reset-input", this._resetHandler);
+    });
+  }
+
+  // Force-clear any in-flight pointer state. Called from React when overlays
+  // (like the Breeding Lab) that could swallow a pointerup are unmounted —
+  // without this, the closure-scoped drag would stick and block both the
+  // camera pan and tap-to-plant gestures.
+  resetInput() {
+    this._drag = null;
+    this._hasMoved = false;
+    this.plantClicked = false;
+    // Also reset Phaser's own pointer state so isDown/wasCanceled don't leak.
+    const ptr = this.input?.manager?.activePointer;
+    if (ptr) {
+      ptr.isDown = false;
+      ptr.wasCanceled = true;
+      ptr.reset?.();
+    }
+    this.input?.manager?.pointers?.forEach?.(p => {
+      p.isDown = false;
+      p.wasCanceled = true;
+      p.reset?.();
+    });
   }
 
   // ── Plants ────────────────────────────────────────────────────────────────

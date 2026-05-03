@@ -45,6 +45,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [watering, setWatering]       = useState(null);
   const [showCollection, setShowCollection] = useState(false);
   const [showLab, setShowLab] = useState(false);
+  const prevShowLab = useRef(false);
   const [showPendingGifts, setShowPendingGifts] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef({ startX: 0, startY: 0, moved: false, hideTimer: null });
@@ -66,6 +67,17 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
       onClearPending?.();
     }
   }, [pendingPlant]);
+
+  // When the Breeding Lab closes, force-reset Phaser's pointer/drag state.
+  // The lab overlays the canvas with z-index:40, and async phase transitions
+  // (mixing → revealing) can leave Phaser's pointer flags stuck — without
+  // this reset, tap-to-plant and camera panning silently break.
+  useEffect(() => {
+    if (prevShowLab.current && !showLab) {
+      vpRef.current?.dispatchEvent(new CustomEvent("reset-input"));
+    }
+    prevShowLab.current = showLab;
+  }, [showLab]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowHint(false), 4000);
