@@ -293,7 +293,7 @@ export function BreedingLab({ onClose, onPlantNewWord }) {
             >
               {result.word}
             </div>
-            {result.ipa && <div className="cb-ipa">/{result.ipa}/</div>}
+            {result.ipa && <div className="cb-ipa">{result.ipa}</div>}
             {result.gloss && <div className="cb-gloss">{result.gloss}</div>}
             {result.connection && <div className="cb-connection">💡 {result.connection}</div>}
             <div className="cb-actions">

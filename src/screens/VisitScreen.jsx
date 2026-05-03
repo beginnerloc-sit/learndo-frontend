@@ -110,9 +110,7 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
           {pressedSeed.partOfSpeech && <span className="wc-pos">{pressedSeed.partOfSpeech}</span>}
         </div>
         <div className="wc-word">{pressed.word}</div>
-        {pressedSeed.ipa && (
-          <div className="ipa">{pressedSeed.ipa.startsWith("/") ? pressedSeed.ipa : `/${pressedSeed.ipa}/`}</div>
-        )}
+        {pressedSeed.ipa && <div className="ipa">{pressedSeed.ipa}</div>}
         {pressedSeed.gloss && <div className="trans">{pressedSeed.gloss}</div>}
         {example && <div className="wc-example">"{example}"</div>}
 

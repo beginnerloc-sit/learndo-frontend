@@ -50,7 +50,7 @@ function MultipleChoiceQuiz({ quiz, picked, onPick, isFillBlank }) {
           <>
             <div className="quiz-label">{prompt}</div>
             <div className="quiz-word" style={{ fontFamily: theme.fontFamily, color: theme.color, fontStyle: theme.fontStyle, fontWeight: theme.fontWeight, letterSpacing: theme.letterSpacing }}>{quiz.word}</div>
-            {quiz.ipa && <div className="quiz-ipa">/{quiz.ipa}/</div>}
+            {quiz.ipa && <div className="quiz-ipa">{quiz.ipa}</div>}
           </>
         )}
       </div>

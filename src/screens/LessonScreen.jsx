@@ -73,7 +73,7 @@ export function LessonScreen({ onClose }) {
             <div className="word-prompt">
               <div className="lbl">Translate · {question.lang} → EN</div>
               <div className="big" style={(() => { const t = wordTheme(question.word); return { fontFamily: t.fontFamily, color: t.color, fontStyle: t.fontStyle, fontWeight: t.fontWeight, letterSpacing: t.letterSpacing }; })()}>{question.word}</div>
-              <div className="ipa">/{question.ipa}/</div>
+              {question.ipa && <div className="ipa">{question.ipa}</div>}
             </div>
 
             <div className="choices">

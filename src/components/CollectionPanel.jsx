@@ -130,7 +130,7 @@ function HarvestCard({ item }) {
             {item.lang.toUpperCase()}
           </span>
           <div className="harvest-back-word">{item.word}</div>
-          {item.ipa && <div className="harvest-ipa">/{item.ipa}/</div>}
+          {item.ipa && <div className="harvest-ipa">{item.ipa}</div>}
           {item.gloss && <div className="harvest-gloss">{item.gloss}</div>}
           <div className="harvest-date">🌸 {fmtDate(item.harvested_at)}</div>
         </div>

@@ -316,7 +316,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
                 )}
               </div>
               <div className="wc-word" style={(() => { const t = wordTheme(pressed.word); return { fontFamily: t.fontFamily, color: t.color, fontStyle: t.fontStyle, fontWeight: t.fontWeight, letterSpacing: t.letterSpacing }; })()}>{pressed.word}</div>
-              {pressedSeed.ipa && <div className="ipa">{pressedSeed.ipa.startsWith("/") ? pressedSeed.ipa : `/${pressedSeed.ipa}/`}</div>}
+              {pressedSeed.ipa && <div className="ipa">{pressedSeed.ipa}</div>}
               {pressedSeed.gloss && <div className="trans">{pressedSeed.gloss}</div>}
               {example && <div className="wc-example">"{example}"</div>}
               {uniqueReactions.length > 0 && (
