@@ -651,7 +651,7 @@ class GardenScene extends Phaser.Scene {
     // Word label — sits on the flower head, theme picked by word hash.
     // For plants with a reaction, a wider colored stroke is rendered as a
     // back-layer to create a gem-trim ring around the cream outline.
-    const theme = wordTheme(f.word);
+    const theme = wordTheme(f.word, f.lang);
     const reaction = f.reactions?.[0];
     const trimColor = reaction ? (REACTION_TRIM[reaction.emoji] || "#e87aa3") : null;
     const wordY = -img.displayHeight * 0.78;

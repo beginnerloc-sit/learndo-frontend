@@ -36,7 +36,7 @@ export function buildQuiz(data) {
 }
 
 function MultipleChoiceQuiz({ quiz, picked, onPick, isFillBlank }) {
-  const theme = wordTheme(quiz.word);
+  const theme = wordTheme(quiz.word, quiz.lang);
   const prompt = QUIZ_PROMPTS[quiz.quiz_type] ?? "What does this mean?";
   return (
     <>

@@ -51,13 +51,62 @@ const THEMES = [
   { fontFamily: "'Bowlby One', sans-serif",    color: "#5a3e8e", fontStyle: "normal", fontWeight: "400" },
 ];
 
-export function wordTheme(word) {
-  return THEMES[strHash(word) % THEMES.length];
+// Vietnamese themes — most playful display fonts above lack the Latin Extended
+// Additional glyphs Vietnamese needs (e.g. ấ ề ữ ặ), which causes ugly fallback
+// rendering. These themes use only fonts with full Vietnamese coverage.
+const VIET_THEMES = [
+  // Reds / pinks
+  { fontFamily: "'Bagel Fat One', cursive",       color: "#c1325a", fontStyle: "normal", fontWeight: "400" },
+  { fontFamily: "'Mali', cursive",                color: "#b53a6a", fontStyle: "italic", fontWeight: "700" },
+  { fontFamily: "'Henny Penny', cursive",         color: "#d4267a", fontStyle: "normal", fontWeight: "400" },
+  { fontFamily: "'Be Vietnam Pro', sans-serif",   color: "#a83a4a", fontStyle: "italic", fontWeight: "700" },
+
+  // Blues / teals
+  { fontFamily: "'Bungee', cursive",              color: "#1a6b8a", fontStyle: "normal", fontWeight: "400", letterSpacing: "0.04em" },
+  { fontFamily: "'Patrick Hand', cursive",        color: "#2176c7", fontStyle: "normal", fontWeight: "400" },
+  { fontFamily: "'Fraunces', serif",              color: "#1a3466", fontStyle: "italic", fontWeight: "700" },
+  { fontFamily: "'Be Vietnam Pro', sans-serif",   color: "#0fa8c0", fontStyle: "normal", fontWeight: "800" },
+
+  // Greens
+  { fontFamily: "'Fredoka', sans-serif",          color: "#3aab4e", fontStyle: "normal", fontWeight: "700" },
+  { fontFamily: "'Pangolin', cursive",            color: "#5a9333", fontStyle: "normal", fontWeight: "400" },
+  { fontFamily: "'Mali', cursive",                color: "#2b5e1f", fontStyle: "normal", fontWeight: "700" },
+  { fontFamily: "'Fraunces', serif",              color: "#2d6a2d", fontStyle: "normal", fontWeight: "800" },
+
+  // Purples
+  { fontFamily: "'Bagel Fat One', cursive",       color: "#5a3e8e", fontStyle: "normal", fontWeight: "400" },
+  { fontFamily: "'Henny Penny', cursive",         color: "#7a2fa0", fontStyle: "normal", fontWeight: "400" },
+  { fontFamily: "'Be Vietnam Pro', sans-serif",   color: "#4a1a8e", fontStyle: "normal", fontWeight: "800" },
+  { fontFamily: "'Patrick Hand', cursive",        color: "#6a1a4a", fontStyle: "normal", fontWeight: "400" },
+
+  // Oranges / ambers
+  { fontFamily: "'Bungee', cursive",              color: "#d4570a", fontStyle: "normal", fontWeight: "400", letterSpacing: "0.04em" },
+  { fontFamily: "'Mali', cursive",                color: "#c87800", fontStyle: "italic", fontWeight: "400" },
+  { fontFamily: "'Fredoka', sans-serif",          color: "#d97a3e", fontStyle: "normal", fontWeight: "600" },
+  { fontFamily: "'Pangolin', cursive",            color: "#a07000", fontStyle: "normal", fontWeight: "400" },
+];
+
+// Vietnamese is detected either explicitly (lang === "vietnamese"/"Vietnamese")
+// or by the presence of characters that essentially only occur in Vietnamese.
+const VIET_CHAR_RE = /[đĐơƠưƯấầẩẫậắằẳẵặếềểễệốồổỗộớờởỡợứừửữựỳỷỹỵ]/;
+
+function isVietnamese(word, lang) {
+  if (lang) {
+    const k = String(lang).toLowerCase();
+    if (k === "vietnamese" || k === "vi" || k === "vn") return true;
+  }
+  return VIET_CHAR_RE.test(word || "");
 }
 
-// All unique font family names used by THEMES — used to preload before canvas render
+export function wordTheme(word, lang) {
+  const pool = isVietnamese(word, lang) ? VIET_THEMES : THEMES;
+  return pool[strHash(word) % pool.length];
+}
+
+// All unique font family names used by either theme pool — preloaded before
+// canvas render so Phaser's text rendering doesn't fall back to system fonts.
 export const THEME_FONT_NAMES = [
-  ...new Set(THEMES.map(t => t.fontFamily.replace(/^'|',.*$/g, ""))),
+  ...new Set([...THEMES, ...VIET_THEMES].map(t => t.fontFamily.replace(/^'|',.*$/g, ""))),
 ];
 
 // Phaser-compatible fontStyle string (combines weight + style)

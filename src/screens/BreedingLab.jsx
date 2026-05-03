@@ -287,7 +287,7 @@ export function BreedingLab({ onClose, onPlantNewWord }) {
             <div
               className="cb-result-word"
               style={(() => {
-                const t = wordTheme(result.word);
+                const t = wordTheme(result.word, result.lang);
                 return { fontFamily: t.fontFamily, color: t.color, fontStyle: t.fontStyle, fontWeight: t.fontWeight };
               })()}
             >
@@ -318,7 +318,7 @@ export function BreedingLab({ onClose, onPlantNewWord }) {
 
 // ── Sub-components ───────────────────────────────────────────────────────
 const Slot = React.forwardRef(({ index, item, hover, onClear }, ref) => {
-  const theme = item ? wordTheme(item.word) : null;
+  const theme = item ? wordTheme(item.word, item.lang) : null;
   return (
     <div ref={ref} className={`lab-slot${item ? " filled" : ""}${hover ? " hover" : ""}`}>
       {item ? (
@@ -347,7 +347,7 @@ const Slot = React.forwardRef(({ index, item, hover, onClear }, ref) => {
 });
 
 function CutsceneCard({ item, side }) {
-  const theme = wordTheme(item.word);
+  const theme = wordTheme(item.word, item.lang);
   return (
     <div className={`cs-card cs-card-${side}`}>
       <img
@@ -365,7 +365,7 @@ function CutsceneCard({ item, side }) {
 }
 
 function BenchCard({ item, beingDragged, ghost, ...rest }) {
-  const theme = wordTheme(item.word);
+  const theme = wordTheme(item.word, item.lang);
   return (
     <div
       className={`lab-bench-card${beingDragged ? " hidden" : ""}${ghost ? " ghost" : ""}`}

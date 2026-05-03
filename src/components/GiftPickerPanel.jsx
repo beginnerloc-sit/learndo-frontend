@@ -129,7 +129,7 @@ export function GiftPickerPanel({ friend, onClose }) {
         )}
 
         {!isLoading && items.length > 0 && items.map(item => {
-          const theme   = wordTheme(item.word);
+          const theme   = wordTheme(item.word, item.lang);
           const state   = giftState[item.word];
           const isSent  = state === "sent";
           const isSending = state === "sending";

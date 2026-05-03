@@ -10,6 +10,7 @@ import { fetchPendingGifts, plantPendingGift } from "../api/leaderboard";
 import { useCurrentUser } from "../hooks/useUser";
 import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant, useMovePlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
+import { TOPIC_EMOJI } from "../utils/topics";
 
 export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onOpenSettings, pendingPlant, onClearPending }) {
   const { data: fetchedUser } = useCurrentUser();
@@ -314,8 +315,11 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
                 {pressedSeed.partOfSpeech && (
                   <span className="wc-pos">{pressedSeed.partOfSpeech}</span>
                 )}
+                {pressedSeed.topic && (
+                  <span className="wc-topic">{TOPIC_EMOJI[pressedSeed.topic] ?? "🏷"} {pressedSeed.topic}</span>
+                )}
               </div>
-              <div className="wc-word" style={(() => { const t = wordTheme(pressed.word); return { fontFamily: t.fontFamily, color: t.color, fontStyle: t.fontStyle, fontWeight: t.fontWeight, letterSpacing: t.letterSpacing }; })()}>{pressed.word}</div>
+              <div className="wc-word" style={(() => { const t = wordTheme(pressed.word, pressedSeed.lang); return { fontFamily: t.fontFamily, color: t.color, fontStyle: t.fontStyle, fontWeight: t.fontWeight, letterSpacing: t.letterSpacing }; })()}>{pressed.word}</div>
               {pressedSeed.ipa && <div className="ipa">{pressedSeed.ipa}</div>}
               {pressedSeed.gloss && <div className="trans">{pressedSeed.gloss}</div>}
               {example && <div className="wc-example">"{example}"</div>}

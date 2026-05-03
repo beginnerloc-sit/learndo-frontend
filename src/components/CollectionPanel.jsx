@@ -75,7 +75,7 @@ const REACTION_FILTERS = ["🌸", "💧", "✨", "🌟", "💕", "🌈"];
 
 function HarvestCard({ item }) {
   const [flipped, setFlipped] = React.useState(false);
-  const theme = wordTheme(item.word);
+  const theme = wordTheme(item.word, item.lang);
   const reaction = item.reactions?.[0];
   const reactClass = reaction ? (REACT_CLASS[reaction.emoji] || "") : "";
   return (

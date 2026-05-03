@@ -58,6 +58,7 @@ export function normPlant(p) {
     partOfSpeech: p.part_of_speech || null,
     exampleSentence: p.example_sentence || null,
     level: p.level || null,
+    topic: p.topic || null,
     reactions: p.reactions || [],
     giftedBy: p.gifted_by || null,
     giftedByName: p.gifted_by_name || null,
