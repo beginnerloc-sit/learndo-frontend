@@ -293,7 +293,7 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
           <p>
             {(langFilter || reactionFilter || debouncedSearch)
               ? "No words match these filters."
-              : (isFriend ? `${friend.name} hasn't harvested anything yet.` : "HARVEST STAGE 5 PLANTS TO COLLECT WORDS")}
+              : (isFriend ? `${friend.name} hasn't harvested anything yet.` : "HARVEST STAGE 3 PLANTS TO COLLECT WORDS")}
           </p>
         </div>
       )}
