@@ -9,6 +9,7 @@ import { LeaderboardScreen } from "./screens/LeaderboardScreen";
 import { FriendsScreen } from "./screens/FriendsScreen";
 import { AuthScreen } from "./screens/AuthScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
+import { MapBuilder } from "./screens/MapBuilder";
 import { getStoredAuth, saveAuth, clearAuth } from "./api/auth";
 import { useBackgroundMusic } from "./hooks/useBackgroundMusic";
 
@@ -151,7 +152,26 @@ function DesktopGate() {
   );
 }
 
+function useHashRoute() {
+  const [hash, setHash] = useState(typeof window === "undefined" ? "" : window.location.hash);
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return hash;
+}
+
 export default function App() {
+  const hash = useHashRoute();
+  // Map builder route is unauthenticated and bypasses the desktop gate.
+  if (hash === "#/build-map") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <MapBuilder />
+      </QueryClientProvider>
+    );
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <DesktopGate />

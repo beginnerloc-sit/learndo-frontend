@@ -7,15 +7,31 @@ import { wordTheme } from "../utils/wordTheme";
 
 const PAGE_SIZE = 20;
 
-const POT_SPRITES = [
-  "pot1-red", "pot1-blue", "pot1-green",
-  "pot2-colorful", "pot2-pink", "pot2-purple", "pot2-red", "pot2-yellow",
-  "pot3-colorful", "pot3-purple", "pot3-red",
-  "pot4-colorful", "pot4-yellow",
-  "pot5-colorful", "pot5-lilac", "pot5-pink", "pot5-purple", "pot5-red",
-  "pot6-colorful", "pot6-orange", "pot6-purple", "pot6-red",
-  "pot7-colorful", "pot7-yellow",
-];
+const FLOWERS_TIER = {
+  beginner: [
+    "flowers1/pot1-red",      "flowers1/pot1-blue",     "flowers1/pot1-green",
+    "flowers1/pot2-colorful", "flowers1/pot2-pink",     "flowers1/pot2-purple", "flowers1/pot2-red", "flowers1/pot2-yellow",
+    "flowers1/pot3-colorful", "flowers1/pot3-purple",   "flowers1/pot3-red",
+    "flowers1/pot4-colorful", "flowers1/pot4-yellow",
+    "flowers1/pot5-colorful", "flowers1/pot5-lilac",    "flowers1/pot5-pink",   "flowers1/pot5-purple", "flowers1/pot5-red",
+    "flowers1/pot6-colorful", "flowers1/pot6-orange",   "flowers1/pot6-purple", "flowers1/pot6-red",
+    "flowers1/pot7-colorful", "flowers1/pot7-yellow",
+  ],
+  intermediate: [
+    "flowers2/Pink_Flower_1",   "flowers2/Pink_Flower_2",   "flowers2/Pink_Flower_3",
+    "flowers2/Purple_Flower_1", "flowers2/Purple_Flower_2", "flowers2/Purple_Flower_3",
+    "flowers2/Red_Flower_1",    "flowers2/Red_Flower_2",    "flowers2/Red_Flower_3",    "flowers2/Red_Flower_4",
+    "flowers2/Red_Rose_1",      "flowers2/Red_Rose_2",      "flowers2/Red_Rose_3",      "flowers2/Red_Rose_4",      "flowers2/Red_Rose_5",
+    "flowers2/Yellow_Flower_1", "flowers2/Yellow_Flower_2", "flowers2/Yellow_Flower_3", "flowers2/Yellow_Flower_4",
+  ],
+  advanced: [
+    "flowers3/Flower1",         "flowers3/Flower2",
+    "flowers3/Premium1",        "flowers3/Premium2",        "flowers3/Premium3",
+    "flowers3/Premium4",        "flowers3/Premium5",        "flowers3/Premium6",
+    "flowers3/Pink_Flower_3",   "flowers3/Purple_Flower_3", "flowers3/Red_Flower_4",
+    "flowers3/Red_Rose_5",      "flowers3/Yellow_Flower_4",
+  ],
+};
 
 function strHash(s) {
   let h = 5381;
@@ -23,9 +39,10 @@ function strHash(s) {
   return h;
 }
 
-function spriteFor(word) {
+function spriteFor(word, level) {
+  const list = FLOWERS_TIER[level] || FLOWERS_TIER.beginner;
   const si = strHash(word) % 100;
-  return POT_SPRITES[si % POT_SPRITES.length];
+  return list[si % list.length];
 }
 
 function fmtDate(iso) {
@@ -73,11 +90,11 @@ function HarvestCard({ item }) {
       type="button"
     >
       <div className="harvest-card-inner">
-        {/* Front — plant + word only */}
+        {/* Front — plant, word, and (if any) compliment giver */}
         <div className="harvest-face harvest-front">
           <img
             className="harvest-sprite"
-            src={`/assets/garden/${spriteFor(item.word)}.png`}
+            src={`/assets/${spriteFor(item.word, item.level)}.png`}
             alt={item.word}
           />
           <span
@@ -93,8 +110,9 @@ function HarvestCard({ item }) {
             {item.word}
           </span>
           {reaction && (
-            <span className="harvest-front-react" title={`from ${reaction.from_name}`}>
-              {reaction.emoji}
+            <span className="harvest-front-from" title={`Compliment from ${reaction.from_name}`}>
+              <span className="harvest-front-from-emoji">{reaction.emoji}</span>
+              <span className="harvest-front-from-name">from {reaction.from_name}</span>
             </span>
           )}
         </div>

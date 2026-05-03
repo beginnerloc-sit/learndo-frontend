@@ -57,6 +57,7 @@ export function normPlant(p) {
     gloss: p.gloss || null,
     partOfSpeech: p.part_of_speech || null,
     exampleSentence: p.example_sentence || null,
+    level: p.level || null,
     reactions: p.reactions || [],
     giftedBy: p.gifted_by || null,
     giftedByName: p.gifted_by_name || null,
@@ -78,6 +79,16 @@ export async function plantWord({ word, x, y, scale = 1.85 }) {
     body: JSON.stringify({ word, x, y, scale }),
   });
   if (!res.ok) throw new Error("Failed to plant word");
+  return normPlant(await res.json());
+}
+
+export async function movePlant(plantId, { x, y }) {
+  const res = await fetch(`${BASE}/garden/${plantId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ x, y }),
+  });
+  if (!res.ok) throw new Error("Failed to move plant");
   return normPlant(await res.json());
 }
 

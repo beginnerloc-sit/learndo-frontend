@@ -7,7 +7,7 @@ import { CollectionPanel } from "../components/CollectionPanel";
 import { fetchQuiz, fetchWordQuiz, normPlant } from "../api/vocabulary";
 import { fetchPendingGifts, plantPendingGift } from "../api/leaderboard";
 import { useCurrentUser } from "../hooks/useUser";
-import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant } from "../hooks/useVocabulary";
+import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant, useMovePlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
 
 export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onLogout, onOpenSettings, musicPlaying, onToggleMusic, pendingPlant, onClearPending }) {
@@ -17,6 +17,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const plantWord    = usePlantWord();
   const advanceStage = useAdvanceWordStage();
   const harvestMut   = useHarvestPlant();
+  const moveMut      = useMovePlant();
 
   const { data: gardenPlants } = useVocabulary(user?.id);
   const { data: pendingGifts = [] } = useQuery({
@@ -34,6 +35,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [pressed, setPressed]       = useState(null);
   const [showHint, setShowHint]     = useState(true);
   const [planting, setPlanting]     = useState(null);
+  const [moving, setMoving]         = useState(null);   // {id, word, lang, langColor}
   const [plantedSeeds, setPlantedSeeds] = useState([]);
   const [ghost, setGhost]           = useState({ x: 0, y: 0, visible: false });
   const [quiz, setQuiz]             = useState(null);
@@ -46,6 +48,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef({ startX: 0, startY: 0, moved: false, hideTimer: null });
   const [seedError, setSeedError] = useState("");
+  const [weather, setWeather] = useState(null);   // { type, label }
 
   // Load garden plants from DB once
   useEffect(() => {
@@ -72,19 +75,24 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
     const el = vpRef.current;
     if (!el) return;
     const handler = (e) => setCam(e.detail);
+    const weatherHandler = (e) => setWeather(e.detail);
     el.addEventListener("cam", handler);
-    return () => el.removeEventListener("cam", handler);
+    el.addEventListener("weather", weatherHandler);
+    return () => {
+      el.removeEventListener("cam", handler);
+      el.removeEventListener("weather", weatherHandler);
+    };
   }, []);
 
   useEffect(() => {
     const el = vpRef.current;
-    if (!planting || !el) return;
+    if ((!planting && !moving) || !el) return;
     const onMove  = (e) => { const r = el.getBoundingClientRect(); setGhost({ x: e.clientX - r.left, y: e.clientY - r.top, visible: true }); };
     const onLeave = () => setGhost(g => ({ ...g, visible: false }));
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerleave", onLeave);
     return () => { el.removeEventListener("pointermove", onMove); el.removeEventListener("pointerleave", onLeave); };
-  }, [planting]);
+  }, [planting, moving]);
 
   const handlePlantAt = useCallback((wx, wy) => {
     if (!planting) return;
@@ -110,6 +118,17 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
     setPlanting(null);
     setGhost(g => ({ ...g, visible: false }));
   }, [planting, plantWord, queryClient]);
+
+  const handleMoveTo = useCallback((wx, wy) => {
+    if (!moving) return;
+    setPlantedSeeds(s => s.map(seed =>
+      seed.id === moving.id ? { ...seed, x: wx, y: wy } : seed
+    ));
+    moveMut.mutate({ id: moving.id, x: wx, y: wy });
+    setMoving(null);
+    setPressed(null);
+    setGhost(g => ({ ...g, visible: false }));
+  }, [moving, moveMut]);
 
   const handleWin = (word, lang) => {
     cachedSeed.current = null;
@@ -144,7 +163,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
       const data = await fetchWordQuiz(word, stage);
       setWaterQuiz(buildQuiz(data));
     } catch {
-      setPlantedSeeds(s => s.map(seed => seed.id === id && seed.stage < 5 ? { ...seed, stage: seed.stage + 1 } : seed));
+      setPlantedSeeds(s => s.map(seed => seed.id === id && seed.stage < 4 ? { ...seed, stage: seed.stage + 1 } : seed));
       advanceStage.mutate(id);
       setWatering(null);
     }
@@ -152,7 +171,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
 
   const handleWaterWin = useCallback(() => {
     if (!watering) return;
-    setPlantedSeeds(s => s.map(seed => seed.id === watering.id && seed.stage < 5 ? { ...seed, stage: seed.stage + 1 } : seed));
+    setPlantedSeeds(s => s.map(seed => seed.id === watering.id && seed.stage < 4 ? { ...seed, stage: seed.stage + 1 } : seed));
     advanceStage.mutate(watering.id);
     setWaterQuiz(null);
     setWatering(null);
@@ -161,8 +180,8 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const pressedSeed = pressed
     ? plantedSeeds.find(s => s.word === pressed.word && s.x === pressed.x && s.y === pressed.y)
     : null;
-  const canWater   = pressedSeed && pressedSeed.stage < 5;
-  const canHarvest = pressedSeed && pressedSeed.stage >= 5;
+  const canWater   = pressedSeed && pressedSeed.stage < 4;
+  const canHarvest = pressedSeed && pressedSeed.stage >= 4;
 
   const handleHarvest = useCallback(() => {
     if (!pressedSeed) return;
@@ -185,6 +204,11 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
       {/* Top bar */}
       <div className="sky-bar">
         <div className="pill"><span className="ic">🌸</span>{plantedSeeds.length}</div>
+        {weather && (
+          <div className="pill weather-pill" title={`Today's weather: ${weather.label}`}>
+            {weather.label}
+          </div>
+        )}
         {giftedCount > 0 && (
           <button className="gift-notif-pill" onClick={() => setShowPendingGifts(true)}>
             <span className="gift-ring-icon">🎁</span>
@@ -242,9 +266,11 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           vpRef={vpRef}
           pressed={pressed}
           setPressed={setPressed}
-          plantedSeeds={plantedSeeds}
+          plantedSeeds={moving ? plantedSeeds.filter(p => p.id !== moving.id) : plantedSeeds}
           planting={planting}
+          moving={moving}
           onPlantAt={handlePlantAt}
+          onMoveTo={handleMoveTo}
         />
 
         {pressed && pressedSeed && (() => {
@@ -287,7 +313,10 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
               {uniqueReactions.length > 0 && (
                 <div className="wc-reactions">
                   {uniqueReactions.map(r => (
-                    <span key={r.emoji} className="wc-reaction" title={r.from_name}>{r.emoji}</span>
+                    <span key={r.emoji} className="wc-reaction-pill" title={r.from_name}>
+                      <span className="wc-reaction-emoji">{r.emoji}</span>
+                      <span className="wc-reaction-from">from {r.from_name}</span>
+                    </span>
                   ))}
                 </div>
               )}
@@ -297,7 +326,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
                   style={{ marginTop: 8, width: "100%", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
                   onClick={(e) => { e.stopPropagation(); handleWaterTap(pressedSeed.id, pressed.word, pressedSeed.stage); }}
                 >
-                  💧 WATER ({pressedSeed.stage}/5)
+                  💧 WATER ({pressedSeed.stage}/4)
                 </button>
               )}
               {canHarvest && (
@@ -309,6 +338,22 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
                   🌸 HARVEST
                 </button>
               )}
+              <button
+                className="hd-btn"
+                style={{ marginTop: 6, width: "100%", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "linear-gradient(180deg,#cfe8be,#9cc47b)", borderColor: "#3e6534", color: "#1c4a10", boxShadow: "0 3px 0 #3e6534" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMoving({
+                    id: pressedSeed.id,
+                    word: pressedSeed.word,
+                    lang: pressedSeed.lang,
+                    langColor: pressedSeed.langColor,
+                  });
+                  setPressed(null);
+                }}
+              >
+                ✋ MOVE
+              </button>
             </div>
           );
         })()}
@@ -332,13 +377,13 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
 
       {showHint && !planting && <div className="pan-hint">DRAG TO EXPLORE →</div>}
 
-      {planting && ghost.visible && (
+      {(planting || moving) && ghost.visible && (
         <div className="ghost-seed" style={{ left: ghost.x, top: ghost.y }}>
           <svg width="50" height="58" viewBox="-25 -30 50 58">
             <ellipse cx="0" cy="20" rx="12" ry="3" fill="rgba(20,30,10,0.3)" />
-            <ellipse cx="0" cy="0" rx="6" ry="8" fill="#d9a85a" stroke="#7a4a1a" strokeWidth="1.4" />
+            <ellipse cx="0" cy="0" rx="6" ry="8" fill={moving ? "#9cc47b" : "#d9a85a"} stroke={moving ? "#3e6534" : "#7a4a1a"} strokeWidth="1.4" />
           </svg>
-          <div className="ghost-label">{planting.word}</div>
+          <div className="ghost-label">{(planting || moving).word}</div>
         </div>
       )}
 
@@ -350,6 +395,15 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
             <div className="s">{planting.word} · {planting.lang}</div>
           </div>
           <button className="hd-btn" style={{ background: "linear-gradient(180deg,#e0e0e0,#aaa)", borderColor: "#555", color: "#fff" }} onClick={() => { setPlanting(null); setGhost(g => ({ ...g, visible: false })); }}>CANCEL</button>
+        </div>
+      ) : moving ? (
+        <div className="plant-banner" style={{ borderColor: "#3e6534" }}>
+          <div className="ic">✋</div>
+          <div className="lbl">
+            <div className="t">TAP TO MOVE</div>
+            <div className="s">{moving.word} · {moving.lang}</div>
+          </div>
+          <button className="hd-btn" style={{ background: "linear-gradient(180deg,#e0e0e0,#aaa)", borderColor: "#555", color: "#fff" }} onClick={() => { setMoving(null); setGhost(g => ({ ...g, visible: false })); }}>CANCEL</button>
         </div>
       ) : (
         <>
@@ -375,7 +429,7 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           <button className="collection-btn" onClick={() => setShowCollection(true)}>
             <div className="icon">🌸</div>
             <div className="label"><b>COLLECTION</b> · harvested words</div>
-            <span className="count">{plantedSeeds.filter(s => s.stage >= 5).length > 0 ? "VIEW" : "VIEW"}</span>
+            <span className="count">{plantedSeeds.filter(s => s.stage >= 4).length > 0 ? "VIEW" : "VIEW"}</span>
           </button>
         </>
       )}

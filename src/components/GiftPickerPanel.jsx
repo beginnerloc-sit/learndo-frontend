@@ -1,38 +1,45 @@
 import React from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Search, Gift, Check } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { fetchCollection, giftSeed } from "../api/leaderboard";
+import { wordTheme } from "../utils/wordTheme";
 
 const PAGE_SIZE = 20;
 
-const POT_SPRITES = [
-  "pot1-red", "pot1-blue", "pot1-green",
-  "pot2-colorful", "pot2-pink", "pot2-purple", "pot2-red", "pot2-yellow",
-  "pot3-colorful", "pot3-purple", "pot3-red",
-  "pot4-colorful", "pot4-yellow",
-  "pot5-colorful", "pot5-lilac", "pot5-pink", "pot5-purple", "pot5-red",
-  "pot6-colorful", "pot6-orange", "pot6-purple", "pot6-red",
-  "pot7-colorful", "pot7-yellow",
-];
-const WORD_COLORS = ["#c1325a","#b53a6a","#d97a3e","#5a9333","#5a3e8e","#2176c7","#d4267a","#3aab4e","#e8671a","#0fa8c0"];
-const WORD_FONTS  = ["'Caprasimo', serif","'Lilita One', sans-serif","'Shrikhand', serif","'Pacifico', cursive","'Caveat', cursive","'Bowlby One', sans-serif"];
-const WORD_STYLES = ["normal","normal","normal","italic","bold","bold italic"];
+const FLOWERS_TIER = {
+  beginner: [
+    "flowers1/pot1-red",      "flowers1/pot1-blue",     "flowers1/pot1-green",
+    "flowers1/pot2-colorful", "flowers1/pot2-pink",     "flowers1/pot2-purple", "flowers1/pot2-red", "flowers1/pot2-yellow",
+    "flowers1/pot3-colorful", "flowers1/pot3-purple",   "flowers1/pot3-red",
+    "flowers1/pot4-colorful", "flowers1/pot4-yellow",
+    "flowers1/pot5-colorful", "flowers1/pot5-lilac",    "flowers1/pot5-pink",   "flowers1/pot5-purple", "flowers1/pot5-red",
+    "flowers1/pot6-colorful", "flowers1/pot6-orange",   "flowers1/pot6-purple", "flowers1/pot6-red",
+    "flowers1/pot7-colorful", "flowers1/pot7-yellow",
+  ],
+  intermediate: [
+    "flowers2/Pink_Flower_1",   "flowers2/Pink_Flower_2",   "flowers2/Pink_Flower_3",
+    "flowers2/Purple_Flower_1", "flowers2/Purple_Flower_2", "flowers2/Purple_Flower_3",
+    "flowers2/Red_Flower_1",    "flowers2/Red_Flower_2",    "flowers2/Red_Flower_3",    "flowers2/Red_Flower_4",
+    "flowers2/Red_Rose_1",      "flowers2/Red_Rose_2",      "flowers2/Red_Rose_3",      "flowers2/Red_Rose_4",      "flowers2/Red_Rose_5",
+    "flowers2/Yellow_Flower_1", "flowers2/Yellow_Flower_2", "flowers2/Yellow_Flower_3", "flowers2/Yellow_Flower_4",
+  ],
+  advanced: [
+    "flowers3/Flower1",         "flowers3/Flower2",
+    "flowers3/Premium1",        "flowers3/Premium2",        "flowers3/Premium3",
+    "flowers3/Premium4",        "flowers3/Premium5",        "flowers3/Premium6",
+    "flowers3/Pink_Flower_3",   "flowers3/Purple_Flower_3", "flowers3/Red_Flower_4",
+    "flowers3/Red_Rose_5",      "flowers3/Yellow_Flower_4",
+  ],
+};
 
 function strHash(s) {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = (h * 33 ^ s.charCodeAt(i)) >>> 0;
   return h;
 }
-function spriteFor(word) {
-  return POT_SPRITES[strHash(word) % 100 % POT_SPRITES.length];
-}
-function wordStyle(word) {
-  const wh = strHash(word);
-  return {
-    color:      WORD_COLORS[wh % WORD_COLORS.length],
-    fontFamily: WORD_FONTS[(wh ^ 0xb1c2) % WORD_FONTS.length],
-    fontStyle:  WORD_STYLES[(wh ^ 0xa3f1) % WORD_STYLES.length],
-  };
+function spriteFor(word, level) {
+  const list = FLOWERS_TIER[level] || FLOWERS_TIER.beginner;
+  return list[strHash(word) % 100 % list.length];
 }
 
 export function GiftPickerPanel({ friend, onClose }) {
@@ -41,7 +48,7 @@ export function GiftPickerPanel({ friend, onClose }) {
   const [giftState, setGiftState] = React.useState({}); // word → "sending" | "sent" | "error:msg"
 
   React.useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    const t = setTimeout(() => setDebouncedSearch(search), 280);
     return () => clearTimeout(t);
   }, [search]);
 
@@ -82,94 +89,106 @@ export function GiftPickerPanel({ friend, onClose }) {
   return (
     <div className="gift-picker">
       <div className="gift-picker-header">
-        <button className="icon-btn" style={{ flexShrink: 0 }} onClick={onClose}>
+        <button className="icon-btn" onClick={onClose}>
           <ChevronLeft size={15} strokeWidth={2.5} />
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="gift-picker-title">🎁 Gift to {name}</div>
-          <div className="gift-picker-sub">
-            {items.length} words{hasNextPage ? " · more" : ""}
-          </div>
+        <div className="sign" style={{ flex: 1, textAlign: "center" }}>
+          <h1>🎁 Gift to {name}</h1>
         </div>
+        <div style={{ width: 30 }} />
+      </div>
+
+      <div className="gift-searchbar">
+        <Search size={14} strokeWidth={2.5} className="gift-search-icon" />
         <input
-          className="collection-search"
+          className="gift-search"
           type="text"
-          placeholder="Search…"
+          placeholder="Search your collection…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ width: 110, flexShrink: 0 }}
         />
       </div>
 
-      {isLoading && (
-        <div className="collection-empty">
-          <div className="big">⏳</div>
-          <p>Loading…</p>
-        </div>
-      )}
+      <div className="gift-sub-line">
+        Pick a word from your collection · {items.length}{hasNextPage ? "+" : ""} harvested
+      </div>
 
-      {!isLoading && items.length === 0 && (
-        <div className="collection-empty">
-          <div className="big">🌱</div>
-          <p>HARVEST STAGE 5 PLANTS TO BUILD YOUR COLLECTION</p>
-        </div>
-      )}
+      <div className="gift-body">
+        {isLoading && (
+          <div className="collection-empty">
+            <div className="big">⏳</div>
+            <p>Loading…</p>
+          </div>
+        )}
 
-      {!isLoading && items.length > 0 && (
-        <div className="collection-list">
-          {items.map(item => {
-            const ws = wordStyle(item.word);
-            const state = giftState[item.word];
-            const isSent    = state === "sent";
-            const isSending = state === "sending";
-            const isError   = state?.startsWith("error:");
-            const errMsg    = isError ? state.slice(6) : null;
+        {!isLoading && items.length === 0 && (
+          <div className="collection-empty">
+            <div className="big">🌱</div>
+            <p>{debouncedSearch ? "No words match." : "Harvest fully-grown plants to build your collection — then come back to gift!"}</p>
+          </div>
+        )}
 
-            return (
-              <div key={item.id} className="harvest-card gift-picker-card">
-                <div className="harvest-plant">
-                  <img
-                    className="harvest-sprite"
-                    src={`/assets/garden/${spriteFor(item.word)}.png`}
-                    alt={item.word}
-                  />
-                  <span
-                    className="harvest-plant-word"
-                    style={{ color: ws.color, fontFamily: ws.fontFamily, fontStyle: ws.fontStyle }}
-                  >
-                    {item.word}
-                  </span>
-                </div>
-                <div className="harvest-info">
-                  <span className="lang-tag" style={{ background: item.lang_color + "33", color: item.lang_color, borderColor: item.lang_color + "66" }}>
-                    {item.lang.toUpperCase()}
-                  </span>
-                  {item.ipa  && <div className="harvest-ipa">/{item.ipa}/</div>}
-                  {item.gloss && <div className="harvest-gloss">{item.gloss}</div>}
-                  {isError && <div className="gift-picker-err">{errMsg}</div>}
-                </div>
-                <button
-                  className={`gift-btn${isSent ? " sent" : isSending ? " sending" : ""}`}
-                  onClick={() => handleGift(item.word)}
-                  disabled={isSent || isSending}
+        {!isLoading && items.length > 0 && items.map(item => {
+          const theme   = wordTheme(item.word);
+          const state   = giftState[item.word];
+          const isSent  = state === "sent";
+          const isSending = state === "sending";
+          const isError = state?.startsWith("error:");
+          const errMsg  = isError ? state.slice(6) : null;
+
+          return (
+            <div key={item.id} className={`gift-row${isSent ? " gift-row-sent" : ""}`}>
+              <div className="gift-row-plant">
+                <img
+                  className="gift-row-sprite"
+                  src={`/assets/${spriteFor(item.word, item.level)}.png`}
+                  alt={item.word}
+                />
+                <span
+                  className="gift-row-word"
+                  style={{
+                    color: theme.color,
+                    fontFamily: theme.fontFamily,
+                    fontStyle: theme.fontStyle,
+                    fontWeight: theme.fontWeight,
+                    letterSpacing: theme.letterSpacing,
+                  }}
                 >
-                  {isSent ? "✓" : isSending ? "…" : "🎁"}
-                </button>
+                  {item.word}
+                </span>
               </div>
-            );
-          })}
+              <div className="gift-row-info">
+                <span
+                  className="lang-tag"
+                  style={{ background: item.lang_color + "33", color: item.lang_color, borderColor: item.lang_color + "66" }}
+                >
+                  {item.lang.toUpperCase()}
+                </span>
+                {item.gloss && <div className="gift-row-gloss">{item.gloss}</div>}
+                {isError && <div className="gift-row-err">{errMsg}</div>}
+              </div>
+              <button
+                className={`gift-row-btn${isSent ? " sent" : isSending ? " sending" : ""}`}
+                onClick={() => handleGift(item.word)}
+                disabled={isSent || isSending}
+                title={isSent ? "Sent!" : "Send seed"}
+              >
+                {isSent ? <Check size={16} strokeWidth={2.8} /> : isSending ? "…" : <Gift size={15} strokeWidth={2.5} />}
+              </button>
+            </div>
+          );
+        })}
 
-          {hasNextPage && (
-            <button
-              className="collection-load-more"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-            >
-              {isFetchingNextPage ? "Loading…" : "Load more"}
-            </button>
-          )}
-        </div>
-      )}
+        {hasNextPage && !isLoading && items.length > 0 && (
+          <button
+            className="collection-load-more"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? "Loading…" : "Load more"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -94,7 +94,7 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
     const screenY = flipBelow ? cam.y + (pressed.y + 100) + 14 : anchorY;
 
     const existingReaction = pressedSeed.reactions?.[0] ?? null;
-    const canCompliment = pressedSeed.stage >= 5 && !existingReaction;
+    const canCompliment = pressedSeed.stage >= 4 && !existingReaction;
     const example = pressedSeed.exampleSentence
       ? pressedSeed.exampleSentence.replace(/___/g, pressed.word)
       : null;

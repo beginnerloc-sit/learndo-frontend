@@ -114,6 +114,7 @@ button { font-family: var(--font-body); }
 }
 .pill.streak { background: linear-gradient(180deg, #f6a3c4 0%, #e87aa3 100%); color: white; border-color: #7d2249; box-shadow: 0 2px 0 #7d2249; }
 .pill.streak .ic { background: white; }
+.pill.weather-pill { padding: 3px 9px; gap: 0; }
 /* ── Owner sign (inline in top bar) ── */
 .sign {
   padding: 4px 14px 5px;
@@ -392,6 +393,25 @@ button { font-family: var(--font-body); }
 .word-card .wc-example { font-size: 10px; color: #6e4e2c; font-style: italic; margin-top: 5px; line-height: 1.4; border-left: 2px solid #c9a87a; padding-left: 6px; }
 .word-card .wc-reactions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 .word-card .wc-reaction { font-size: 15px; line-height: 1; cursor: default; }
+.word-card .wc-reaction-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  background: #fde8f0;
+  border: 1.5px solid #e8a0b8;
+  border-radius: 999px;
+  font-family: "Lilita One", sans-serif; font-size: 9px;
+  color: #b53a6a; letter-spacing: 0.04em;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow: hidden;
+}
+.word-card .wc-reaction-emoji {
+  font-size: 12px; line-height: 1; flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(180,58,106,0.3));
+}
+.word-card .wc-reaction-from {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── Modal ── */
 .modal-backdrop { position: absolute; inset: 0; background: rgba(28,18,8,0.6); display: grid; place-items: center; z-index: 30; }
@@ -743,10 +763,23 @@ button { font-family: var(--font-body); }
   text-shadow: 0 1px 2px rgba(40,30,12,0.2);
   margin-top: 2px;
 }
-.harvest-front-react {
-  position: absolute; top: 6px; right: 6px;
-  font-size: 14px; line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(40,30,12,0.3));
+/* Compliment line on the front — sits at the very top of the card, no border */
+.harvest-front-from {
+  position: absolute; top: 6px; left: 6px; right: 6px; z-index: 5;
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  font-family: "Lilita One", sans-serif;
+  font-size: 8px; color: #b53a6a;
+  letter-spacing: 0.04em; line-height: 1.2;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.85);
+  pointer-events: none;
+  overflow: hidden; white-space: nowrap;
+}
+.harvest-front-from-emoji {
+  font-size: 11px; line-height: 1; flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(180,58,106,0.4));
+}
+.harvest-front-from-name {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* Back face — full info */
@@ -824,7 +857,7 @@ button { font-family: var(--font-body); }
   90%     { opacity: 1; }
   100%    { background-position: -120% -120%; opacity: 0; }
 }
-.harvest-card.react-cherry .harvest-front-react {
+.harvest-card.react-cherry .harvest-front-from-emoji {
   filter: drop-shadow(0 0 5px rgba(232,122,163,0.7)) drop-shadow(0 1px 2px rgba(40,30,12,0.3));
 }
 
@@ -853,7 +886,7 @@ button { font-family: var(--font-body); }
   90%     { opacity: 1; }
   100%    { background-position: 0% 200%; opacity: 0; }
 }
-.harvest-card.react-drop .harvest-front-react {
+.harvest-card.react-drop .harvest-front-from-emoji {
   filter: drop-shadow(0 0 5px rgba(46,142,181,0.7)) drop-shadow(0 1px 2px rgba(40,30,12,0.3));
 }
 
@@ -885,7 +918,7 @@ button { font-family: var(--font-body); }
   92%     { opacity: 0.4; }
   100%    { opacity: 0; }
 }
-.harvest-card.react-sparkle .harvest-front-react {
+.harvest-card.react-sparkle .harvest-front-from-emoji {
   filter: drop-shadow(0 0 6px rgba(255,210,80,0.9)) drop-shadow(0 1px 2px rgba(40,30,12,0.3));
 }
 
@@ -914,7 +947,7 @@ button { font-family: var(--font-body); }
   88%       { transform: scale(1.5); opacity: 0.6; }
   100%      { transform: scale(2.0); opacity: 0; }
 }
-.harvest-card.react-star .harvest-front-react {
+.harvest-card.react-star .harvest-front-from-emoji {
   filter: drop-shadow(0 0 8px rgba(243,193,74,0.95)) drop-shadow(0 1px 2px rgba(40,30,12,0.3));
 }
 
@@ -941,7 +974,7 @@ button { font-family: var(--font-body); }
   0%, 100% { opacity: 0.25; transform: scale(1); }
   50%      { opacity: 0.85; transform: scale(1.05); }
 }
-.harvest-card.react-heart .harvest-front-react {
+.harvest-card.react-heart .harvest-front-from-emoji {
   animation: heartBeat 1.2s ease-in-out infinite;
   filter: drop-shadow(0 0 5px rgba(224,82,109,0.85)) drop-shadow(0 1px 2px rgba(40,30,12,0.3));
 }
@@ -993,7 +1026,7 @@ button { font-family: var(--font-body); }
   90%      { opacity: 1; }
   100%     { background-position: -120% -120%; opacity: 0; }
 }
-.harvest-card.react-rainbow .harvest-front-react {
+.harvest-card.react-rainbow .harvest-front-from-emoji {
   filter: drop-shadow(0 0 5px rgba(212,38,122,0.6)) drop-shadow(0 0 8px rgba(180,200,255,0.4));
 }
 .collection-empty {
@@ -1216,49 +1249,126 @@ button { font-family: var(--font-body); }
 .collection-load-more:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #5a3e1a; }
 .collection-load-more:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Gift picker panel ── */
+/* ── Gift picker panel (game-themed: cream paper rows on sky→grass bg) ── */
 .gift-picker {
   position: absolute; inset: 0; z-index: 35;
   display: flex; flex-direction: column;
-  background: linear-gradient(180deg, #1c3010 0%, #2b4a18 100%);
+  background:
+    radial-gradient(120% 60% at 50% 0%, #c8e8f5 0%, #d8edd2 30%, #b0d28f 65%, #8db867 100%);
   animation: slideUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
 }
 .gift-picker-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 52px 16px 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 100%);
-  border-bottom: 1.5px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; gap: 8px;
+  padding: 50px 12px 8px;
+  flex-shrink: 0;
 }
-.gift-picker-title {
-  font-family: "Lilita One", sans-serif; font-size: 16px;
-  color: #fffbe9; text-shadow: 0 2px 4px rgba(0,0,0,0.4);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+
+.gift-searchbar {
+  margin: 4px 12px 4px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; border-radius: 999px;
+  box-shadow: 0 2px 0 #5a3e1a, inset 0 1px 0 rgba(255,255,255,0.5);
+  flex-shrink: 0;
 }
-.gift-picker-sub {
-  font-size: 10px; color: #9cc47b; font-family: "Lilita One", sans-serif;
-  letter-spacing: 0.06em; margin-top: 1px;
+.gift-search-icon { color: #8a6a3a; flex-shrink: 0; }
+.gift-search {
+  flex: 1; padding: 9px 0; min-width: 0;
+  background: transparent; border: 0; outline: none;
+  color: #3e2a16; font-size: 13px;
+  font-family: "Lilita One", sans-serif; letter-spacing: 0.02em;
 }
-.gift-picker-card {
-  align-items: center;
+.gift-search::placeholder { color: #b09070; }
+
+.gift-sub-line {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #5a3e1a; letter-spacing: 0.06em; text-transform: uppercase;
+  text-align: center; padding: 4px 12px 6px;
+  flex-shrink: 0;
 }
-.gift-btn {
-  flex-shrink: 0; width: 38px; height: 38px; border-radius: 999px;
-  border: 2px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  font-size: 18px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; padding: 0;
-  transition: transform 0.1s, background 0.15s;
+
+.gift-body {
+  flex: 1; overflow-y: auto;
+  padding: 4px 12px 28px;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.gift-btn:active { transform: scale(0.9); }
-.gift-btn.sending { opacity: 0.5; cursor: not-allowed; font-size: 14px; color: #fffbe9; }
-.gift-btn.sent {
-  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
-  border-color: #2b3f1a; font-size: 16px; color: #fff;
+.gift-body::-webkit-scrollbar { width: 4px; }
+.gift-body::-webkit-scrollbar-thumb { background: rgba(90,62,26,0.3); border-radius: 4px; }
+
+/* One row per harvested word — same horizontal width as friend/leaderboard rows */
+.gift-row {
+  display: grid; grid-template-columns: 64px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 8px 12px 8px 8px;
+  background: linear-gradient(180deg, #fffef6 0%, #fffbe9 100%);
+  border: 2px solid #5a3e1a; border-radius: 16px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 12px -4px rgba(40,30,12,0.25);
+  transition: transform 0.1s, opacity 0.2s;
+}
+.gift-row.gift-row-sent { opacity: 0.65; }
+
+.gift-row-plant {
+  position: relative;
+  width: 64px; height: 64px;
+  display: flex; align-items: flex-end; justify-content: center;
+  flex-shrink: 0;
+}
+.gift-row-sprite {
+  width: 64px; height: 64px; object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 3px rgba(40,30,12,0.3));
+}
+.gift-row-word {
+  position: absolute; top: 14px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px; line-height: 1;
+  white-space: nowrap;
+  -webkit-text-stroke: 2px #fffde8;
+  paint-order: stroke fill;
+  text-shadow: 0 1px 2px rgba(40,30,12,0.2);
+  pointer-events: none;
+  max-width: 80px; overflow: hidden; text-overflow: ellipsis;
+}
+
+.gift-row-info {
+  min-width: 0;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.gift-row-info .lang-tag {
+  font-family: "Lilita One", sans-serif; font-size: 9px; letter-spacing: 0.08em;
+  padding: 2px 8px; border-radius: 999px; align-self: flex-start;
+  border: 1.5px solid; line-height: 1.4;
+}
+.gift-row-gloss {
+  font-size: 11px; color: #3e2a16; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gift-row-err {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #a83a4a; letter-spacing: 0.03em; margin-top: 2px;
+}
+
+.gift-row-btn {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 999px;
+  background: linear-gradient(180deg, #ffe08a 0%, #f3c14a 100%);
+  border: 2px solid #5a3e1a; color: #3e2a16; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 0 #5a3e1a;
+  transition: transform 0.08s;
+}
+.gift-row-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #5a3e1a; }
+.gift-row-btn.sending {
+  background: #f3ecdc; color: #8a6a3a;
+  font-family: "Lilita One", sans-serif; font-size: 14px; font-weight: bold;
   cursor: default;
 }
-.gift-picker-err {
-  font-family: "Lilita One", sans-serif; font-size: 10px;
-  color: #f08080; margin-top: 2px; letter-spacing: 0.03em;
+.gift-row-btn.sent {
+  background: linear-gradient(180deg, #87c25b 0%, #5a9333 100%);
+  border-color: #2b3f1a; color: #fff;
+  box-shadow: 0 3px 0 #2b3f1a;
+  cursor: default;
 }
 
 /* ── Visit screen interactions ── */
@@ -1292,6 +1402,130 @@ button { font-family: var(--font-body); }
   white-space: nowrap;
 }
 .visit-gift-btn:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 2px 0 #5a3e1a; }
+
+/* ── Map Builder (/#/build-map) ─────────────────────────────────────────── */
+.builder-root {
+  position: fixed; inset: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: #1f2926; color: #e8e2d4;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+.builder-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: #2c3733;
+  border-bottom: 1px solid #3a4641;
+  flex-shrink: 0; flex-wrap: wrap;
+  font-size: 12px;
+}
+.builder-toolbar .muted { color: #9aa49d; }
+.builder-toolbar button,
+.builder-toolbar .builder-import {
+  background: #3a4641; color: #e8e2d4;
+  border: 1px solid #4a5651; border-radius: 6px;
+  padding: 5px 10px; cursor: pointer;
+  font-family: inherit; font-size: 12px;
+}
+.builder-toolbar button:hover:not(:disabled),
+.builder-toolbar .builder-import:hover { background: #4a5651; }
+.builder-toolbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+.builder-toolbar select {
+  background: #3a4641; color: #e8e2d4;
+  border: 1px solid #4a5651; border-radius: 4px; padding: 3px 6px;
+  font-family: inherit; font-size: 12px;
+}
+.builder-toolbar label { display: inline-flex; align-items: center; gap: 4px; }
+
+.builder-body {
+  flex: 1; display: flex; min-height: 0;
+}
+.builder-palette {
+  width: 280px; flex-shrink: 0;
+  background: #28332f;
+  border-right: 1px solid #3a4641;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.builder-palette-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 8px; border-bottom: 1px solid #3a4641;
+  flex-shrink: 0;
+}
+.builder-tab {
+  background: #3a4641; color: #c8d3cc;
+  border: 1px solid #4a5651; border-radius: 4px;
+  padding: 4px 8px; cursor: pointer;
+  font-family: inherit; font-size: 11px;
+}
+.builder-tab.active {
+  background: #5a9333; color: #fff; border-color: #2b3f1a;
+}
+.builder-palette-sheet {
+  flex: 1; overflow: auto; padding: 12px;
+}
+.palette-sheet-wrap {
+  position: relative; cursor: pointer;
+  background: #1c2624; border: 1px solid #3a4641;
+}
+.palette-grid {
+  position: absolute; top: 0; left: 0; pointer-events: none;
+}
+.builder-pick-info {
+  margin-top: 12px; font-size: 11px; color: #c8d3cc;
+}
+.builder-pick-info code {
+  background: #1c2624; padding: 1px 5px; border-radius: 3px;
+  color: #e8a91a; font-family: var(--font-mono), monospace;
+}
+
+.builder-canvas-wrap {
+  flex: 1; min-width: 0; min-height: 0;
+  overflow: auto;             /* enables both horizontal and vertical scroll */
+  background: #1f2926;
+  padding: 16px;
+}
+.builder-canvas {
+  background: #a8d48a;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  cursor: crosshair; image-rendering: pixelated;
+  /* World is 2000×2400 native. Display at ~1.4× so each 64px cell renders
+     as ~90px — easier to click. Wrapper scrolls in both axes when needed. */
+  width: 2800px;
+  height: 3360px;
+  flex-shrink: 0;
+  display: block;
+  margin: 0 auto;
+  touch-action: none;
+}
+.builder-canvas-help {
+  margin-top: 10px; font-size: 11px;
+}
+
+.builder-export-modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.builder-export-card {
+  background: #2c3733; border: 1px solid #4a5651;
+  border-radius: 8px; padding: 16px;
+  width: 100%; max-width: 640px;
+  display: flex; flex-direction: column;
+}
+.builder-export-card h3 { margin: 0 0 8px; }
+.builder-export-card textarea {
+  background: #1c2624; color: #e8e2d4;
+  border: 1px solid #3a4641; border-radius: 4px;
+  padding: 8px; font-family: var(--font-mono), monospace; font-size: 11px;
+  resize: vertical;
+}
+.builder-export-card button {
+  background: #3a4641; color: #e8e2d4;
+  border: 1px solid #4a5651; border-radius: 6px;
+  padding: 6px 12px; cursor: pointer; font-family: inherit;
+}
+.builder-export-card button:hover { background: #4a5651; }
 
 /* ── Loading splash ──────────────────────────────────────────────────────── */
 .splash {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { advanceWordStage, fetchVocabulary, plantWord } from "../api/vocabulary";
+import { advanceWordStage, fetchVocabulary, movePlant, plantWord } from "../api/vocabulary";
 import { harvestPlant } from "../api/leaderboard";
 import { getStoredAuth } from "../api/auth";
 
@@ -25,6 +25,17 @@ export function usePlantWord() {
       const uid = currentUserId();
       queryClient.invalidateQueries({ queryKey: ["vocabulary", uid] });
       queryClient.invalidateQueries({ queryKey: ["user", "me"] });
+    },
+  });
+}
+
+export function useMovePlant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, x, y }) => movePlant(id, { x, y }),
+    onSuccess: () => {
+      const uid = currentUserId();
+      queryClient.invalidateQueries({ queryKey: ["vocabulary", uid] });
     },
   });
 }

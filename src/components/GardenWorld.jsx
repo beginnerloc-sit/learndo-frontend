@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { useRef, useEffect } from "react";
 import { wordTheme, phaserFontStyle, THEME_FONT_NAMES } from "../utils/wordTheme";
 
-export const WORLD = { w: 900, h: 1200 };
+export const WORLD = { w: 2000, h: 2400 };
 
 // SVG ↔ Phaser world coordinate conversion
 // The old SVG viewBox was "-450 -100 900 1200"; Phaser world is 0,0→900,1200
@@ -14,40 +14,101 @@ function strHash(s) {
   return h;
 }
 
+// Reaction → gem-trim color: a thin outer stroke behind the cream stroke,
+// matching the per-reaction palette used on the prismatic cards.
+const REACTION_TRIM = {
+  "🌸": "#e87aa3",
+  "💧": "#5abde8",
+  "✨": "#e8a91a",
+  "🌟": "#f3c14a",
+  "💕": "#e0526d",
+  "🌈": "#d4267a",
+};
+
+
 function makeLcg(seed) {
   let s = seed;
   return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
 }
 
 // ── Sprite palettes ─────────────────────────────────────────────────────────
-const SMALL_SPRITES = [
-  "f7-blue", "f7-pink", "f7-purple", "f7-orange",
-  "f9-orange", "f9-purple", "f9-red", "f9-yellow",
-];
-const MED_SPRITES = [
-  "f1-blue", "f1-red", "f1-yellow", "f1-teal",
-  "f3-blue", "f3-pink", "f3-purple",
-  "f6-blue", "f6-orange", "f6-pink", "f6-purple",
-];
-const POT_SPRITES = [
-  "pot1-red", "pot1-blue", "pot1-green",
-  "pot2-colorful", "pot2-pink", "pot2-purple", "pot2-red", "pot2-yellow",
-  "pot3-colorful", "pot3-purple", "pot3-red",
-  "pot4-colorful", "pot4-yellow",
-  "pot5-colorful", "pot5-lilac", "pot5-pink", "pot5-purple", "pot5-red",
-  "pot6-colorful", "pot6-orange", "pot6-purple", "pot6-red",
-  "pot7-colorful", "pot7-yellow",
+// Sprite keys are PATH-prefixed so they're unique across folders. The full
+// URL is built as `/assets/${key}.png`.
+//
+// Layout (after the user reorganized):
+//   flowers1/  — empty-pot, sprouts (f1-f9), AND simple pot flowers (pot1-pot7)
+//                used as: stage 1 + stage 2 (universal) AND stage 3 for BEGINNER
+//   flowers2/  — bigger mature flowers (Pink/Purple/Red Rose/Yellow varieties)
+//                used as: stage 3 for INTERMEDIATE
+//   flowers3/  — premium mature flowers (Premium1-6, Flower1, Flower2, etc.)
+//                used as: stage 3 for ADVANCED
+const SPROUT_SPRITES = [
+  "flowers1/f7-blue",   "flowers1/f7-pink",   "flowers1/f7-purple", "flowers1/f7-orange",
+  "flowers1/f9-orange", "flowers1/f9-purple", "flowers1/f9-red",    "flowers1/f9-yellow",
+  "flowers1/f1-blue",   "flowers1/f1-red",    "flowers1/f1-yellow", "flowers1/f1-teal",
+  "flowers1/f3-blue",   "flowers1/f3-pink",   "flowers1/f3-purple",
+  "flowers1/f6-blue",   "flowers1/f6-orange", "flowers1/f6-pink",   "flowers1/f6-purple",
 ];
 
-function spriteForStage(styleIdx, stage) {
-  if (stage === 0) return "empty-pot";
-  if (stage <= 2)  return SMALL_SPRITES[styleIdx % SMALL_SPRITES.length];
-  if (stage <= 4)  return MED_SPRITES[styleIdx % MED_SPRITES.length];
-  return POT_SPRITES[styleIdx % POT_SPRITES.length];
+const FLOWERS_TIER = {
+  beginner: [
+    // Simple pot-flower sprites — beginner mature stage
+    "flowers1/pot1-red",      "flowers1/pot1-blue",     "flowers1/pot1-green",
+    "flowers1/pot2-colorful", "flowers1/pot2-pink",     "flowers1/pot2-purple", "flowers1/pot2-red", "flowers1/pot2-yellow",
+    "flowers1/pot3-colorful", "flowers1/pot3-purple",   "flowers1/pot3-red",
+    "flowers1/pot4-colorful", "flowers1/pot4-yellow",
+    "flowers1/pot5-colorful", "flowers1/pot5-lilac",    "flowers1/pot5-pink",   "flowers1/pot5-purple", "flowers1/pot5-red",
+    "flowers1/pot6-colorful", "flowers1/pot6-orange",   "flowers1/pot6-purple", "flowers1/pot6-red",
+    "flowers1/pot7-colorful", "flowers1/pot7-yellow",
+  ],
+  intermediate: [
+    "flowers2/Pink_Flower_1",   "flowers2/Pink_Flower_2",   "flowers2/Pink_Flower_3",
+    "flowers2/Purple_Flower_1", "flowers2/Purple_Flower_2", "flowers2/Purple_Flower_3",
+    "flowers2/Red_Flower_1",    "flowers2/Red_Flower_2",    "flowers2/Red_Flower_3",    "flowers2/Red_Flower_4",
+    "flowers2/Red_Rose_1",      "flowers2/Red_Rose_2",      "flowers2/Red_Rose_3",      "flowers2/Red_Rose_4",      "flowers2/Red_Rose_5",
+    "flowers2/Yellow_Flower_1", "flowers2/Yellow_Flower_2", "flowers2/Yellow_Flower_3", "flowers2/Yellow_Flower_4",
+  ],
+  advanced: [
+    "flowers3/Flower1",         "flowers3/Flower2",
+    "flowers3/Premium1",        "flowers3/Premium2",        "flowers3/Premium3",
+    "flowers3/Premium4",        "flowers3/Premium5",        "flowers3/Premium6",
+    "flowers3/Pink_Flower_3",   "flowers3/Purple_Flower_3", "flowers3/Red_Flower_4",
+    "flowers3/Red_Rose_5",      "flowers3/Yellow_Flower_4",
+  ],
+};
+
+// Backwards-compat export — defaults to tier-1 for any external callers
+// (CollectionPanel/GiftPickerPanel now compute their own per-tier choice).
+export const POT_SPRITES = FLOWERS_TIER.beginner;
+
+// 3 visual stages, but internal stage goes 0-4 (each watering is +1).
+//   internal 0,1 → seed       (visual 1)
+//   internal 2,3 → sprout     (visual 2)  — reached after 2 waterings
+//   internal 4   → mature     (visual 3)  — reached after 2 more waterings
+function visualStage(stage) {
+  if (stage <= 1) return 1;
+  if (stage <= 3) return 2;
+  return 3;
 }
 
-function scaleForStage(stage) {
-  return [1.25, 1.25, 1.5, 1.5, 1.875, 1.875][stage] ?? 1.875;
+function tierFor(level) {
+  return FLOWERS_TIER[level] || FLOWERS_TIER.beginner;
+}
+
+function spriteForStage(styleIdx, stage, level) {
+  const v = visualStage(stage);
+  if (v === 1) return "flowers1/empty-pot";
+  if (v === 2) return SPROUT_SPRITES[styleIdx % SPROUT_SPRITES.length];
+  const list = tierFor(level);
+  return list[styleIdx % list.length];
+}
+
+// Target display HEIGHT in px (we scale to hit this regardless of source size).
+function targetHeightForStage(stage) {
+  const v = visualStage(stage);
+  if (v === 1) return 50;
+  if (v === 2) return 70;
+  return 110;
 }
 
 // Approximate the original SVG cubic-bezier dirt path as polyline (Phaser coords)
@@ -64,11 +125,16 @@ class GardenScene extends Phaser.Scene {
   constructor() { super({ key: "Garden" }); }
 
   preload() {
-    const g = "/assets/garden/", t = "/assets/tiles/";
-    this.load.image("empty-pot", g + "empty-pot.png");
-    [...SMALL_SPRITES, ...MED_SPRITES, ...POT_SPRITES].forEach(k =>
-      this.load.image(k, g + k + ".png")
-    );
+    const t = "/assets/tiles/";
+    // Plant sprites — keys carry their folder prefix, the full URL is /assets/{key}.png
+    const plantKeys = new Set([
+      "flowers1/empty-pot",
+      ...SPROUT_SPRITES,
+      ...FLOWERS_TIER.beginner,
+      ...FLOWERS_TIER.intermediate,
+      ...FLOWERS_TIER.advanced,
+    ]);
+    plantKeys.forEach(k => this.load.image(k, `/assets/${k}.png`));
     // Terrain trees spritesheet — 16×16 px per frame, 15 cols × 13 rows
     this.load.spritesheet("terrain-trees", t + "terrain-trees.png", { frameWidth: 16, frameHeight: 16 });
 
@@ -78,10 +144,20 @@ class GardenScene extends Phaser.Scene {
     this.load.spritesheet("pets-walk", p + "Root_Walk.png", { frameWidth: 64, frameHeight: 64 });
     this.load.spritesheet("pets-idle", p + "Root_Idle.png", { frameWidth: 64, frameHeight: 64 });
 
-    // Terrain tilesets — 16×16 px per tile
-    this.load.spritesheet("ts-grass", t + "grass_tileset.png",     { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("ts-dirt",  t + "dirt_path_tileset.png", { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("ts-water", t + "water_tileset.png",     { frameWidth: 16, frameHeight: 16 });
+    // Terrain tilesets (keys must match the MapBuilder's TILESETS ids)
+    this.load.spritesheet("ts-grass",      t + "grass_tileset.png",       { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-grass-dark", t + "dark_grass_tileset.png",  { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-dirt",       t + "dirt_path_tileset.png",   { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-water",      t + "water_tileset.png",       { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-brick",      t + "brick_floor_tileset.png", { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-fence",      t + "wood_fence_tileset.png",  { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-objects",    t + "objects_terrain.png",     { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-stones",     t + "stone_objects.png",       { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-trees",      t + "terrain-trees.png",       { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("ts-big-trees",  t + "big_trees.png",           { frameWidth: 16, frameHeight: 16 });
+
+    // Custom map JSON — tile placements built with /#/build-map
+    this.load.json("garden-map", "/garden_map.json");
   }
 
   create() {
@@ -93,11 +169,20 @@ class GardenScene extends Phaser.Scene {
     this.plantLayer   = this.add.layer();
     this.plantClicked = false;
 
-    this.drawGround();
-    this.addTrees();
+    // If a custom map JSON is loaded, render from it; otherwise fall back
+    // to the procedural builder.
+    const customMap = this.cache.json.get("garden-map");
+    if (Array.isArray(customMap) && customMap.length > 0) {
+      this.drawCustomMap(customMap);
+    } else {
+      this.drawGround();
+      this.addDecorations();
+      this.addTrees();
+    }
     this.addAnimals();
     this.setupCamera();
     this.setupInput();
+    this.setupWeather();
 
     // Register scene so React can call updateFromProps
     reg.set("scene", this);
@@ -109,6 +194,27 @@ class GardenScene extends Phaser.Scene {
     });
 
     this.scale.on("resize", () => this.emitCam());
+  }
+
+  // ── Custom map — render every tile placement from garden_map.json ───────
+  // Ground tilesets render at a fixed low depth; everything else (trees,
+  // fences, objects) gets `depth = y` so they sort with plants.
+  drawCustomMap(tiles) {
+    const GROUND_SETS = new Set([
+      "ts-grass", "ts-grass-dark", "ts-dirt", "ts-water", "ts-brick",
+    ]);
+    let groundIdx = 0;
+    for (const t of tiles) {
+      if (!t || !t.set) continue;
+      const isGround = GROUND_SETS.has(t.set);
+      // Tiny epsilon offsets keep ground tiles in placement order without
+      // letting them ever climb above plants/trees.
+      const depth = isGround ? -2000 + (groundIdx++ * 0.0001) : (t.y || 0);
+      this.add.image(t.x, t.y, t.set, t.frame)
+        .setScale(t.scale ?? 4)
+        .setOrigin(0.5, 0.5)
+        .setDepth(depth);
+    }
   }
 
   // ── Ground (autotile terrain, 16 px source × scale 4 = 64 px display) ───
@@ -198,10 +304,154 @@ class GardenScene extends Phaser.Scene {
       )
     );
 
-    // Vignette overlay
+    // Lily pads on the pond — single-tile decorations from objects_terrain.png.
+    // The lily-pad cluster sits around rows 8-10, cols 14-16 of the sheet
+    // (sheet is 23 cols wide → idx = row*23 + col).
+    const LILY_PADS = [
+      8 * 23 + 14, 8 * 23 + 15, 8 * 23 + 16,
+      9 * 23 + 14, 9 * 23 + 15, 9 * 23 + 16,
+      10 * 23 + 14, 10 * 23 + 15, 10 * 23 + 16,
+    ];
+    const padPositions = [
+      { c: PX,     r: PY,     pad: 0, ox: 8,  oy: 6  },
+      { c: PX + 2, r: PY + 1, pad: 4, ox: -4, oy: 0  },
+      { c: PX + 1, r: PY + 2, pad: 7, ox: 6,  oy: -4 },
+    ];
+    padPositions.forEach(({ c, r, pad, ox, oy }) => {
+      this.add.image(c * T + T / 2 + ox, r * T + T / 2 + oy, "ts-objects",
+                     LILY_PADS[pad % LILY_PADS.length])
+        .setScale(SC).setDepth(-1495);
+    });
+
+    // Vignette overlay (slight darken at edges for depth)
     const vg = this.add.graphics().setDepth(-1000);
     vg.fillGradientStyle(0x1c3010, 0x1c3010, 0x1c3010, 0x1c3010, 0, 0, 0, 0.2);
     vg.fillRect(0, 0, WORLD.w, WORLD.h);
+  }
+
+  // ── Scattered decorations (flowers, mushrooms, small stones) ────────────
+  // Single-tile sprites scattered on grass. Frame indices were picked from
+  // objects_terrain.png (23 cols × 21 rows of 16×16) and stone_objects.png
+  // (11 cols × 15 rows). Numbers below were chosen by visually scanning the
+  // sheets for standalone "feels-good-on-grass" tiles.
+  addDecorations() {
+    const T = 64;
+    const COLS = Math.ceil(WORLD.w / T) + 1;
+    const ROWS = Math.ceil(WORLD.h / T) + 1;
+
+    // Re-derive what's grass vs path/pond using the same logic as drawGround
+    const PX = 10, PY = 3;       // pond corner (must match drawGround)
+    const isWater = (c, r) => c >= PX && c < PX + 3 && r >= PY && r < PY + 3;
+    const pathSet = new Set();
+    for (let i = 0; i < PATH_PTS.length - 1; i++) {
+      const p0 = PATH_PTS[i], p1 = PATH_PTS[i + 1];
+      const steps = Math.ceil(Math.hypot(p1.x - p0.x, p1.y - p0.y) / 8);
+      for (let s = 0; s <= steps; s++) {
+        const tt = s / steps;
+        const c = Math.floor((p0.x + (p1.x - p0.x) * tt) / T);
+        const r = Math.floor((p0.y + (p1.y - p0.y) * tt) / T);
+        pathSet.add(`${c},${r}`);
+      }
+    }
+    const isGrass = (c, r) => !isWater(c, r) && !pathSet.has(`${c},${r}`);
+
+    // Curated frame indices, sampled by visually scanning the sheets for
+    // standalone single-tile decorations. 23 cols/row → idx = row*23 + col.
+    const TUFTS = [
+      // Tiny grass tufts (rows 0-2) — densely safe, all standalone
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+      46, 47, 48, 49, 50, 51, 52,
+    ];
+    const FLOWERS = [
+      // Tall single-flower stalks on the right side of rows 0-7
+      // (red poppies, blue cornflowers, yellow daisies)
+      14, 15, 16, 17, 18,
+      37, 38, 39, 40, 41,
+      60, 61, 62, 63, 64,
+      83, 84, 85, 86, 87,
+      106, 107, 108, 109, 110,
+      129, 130, 131, 132, 133,
+    ];
+    const MUSHROOMS = [
+      // Mushroom clusters — right portion of rows 13-15
+      312, 313, 314, 315, 316, 317,
+      335, 336, 337, 338, 339, 340,
+      358, 359, 360, 361, 362, 363,
+    ];
+    // 11 cols/row in stone_objects.png → idx = row*11 + col
+    const SMALL_STONES = [
+      // Final rows have small standalone pebbles
+      143, 144, 145, 146, 147,
+      154, 155, 156, 157, 158,
+    ];
+
+    const SC = 3;
+    const STONE_SC = 2.5;
+    const rng = makeLcg(7919);
+
+    // Higher density on the outer edges (forest feel), lighter in the middle
+    // where plants live. Combined with seed-deterministic placement.
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (!isGrass(c, r)) continue;
+
+        // Higher density near edges, lighter in middle plant-belt
+        const middleY = r >= 1 && r <= 8;
+        const middleX = c >= 1 && c <= 9;
+        const inPlantBelt = middleY && middleX;
+        const density = inPlantBelt ? 0.10 : 0.32;
+        if (rng() > density) continue;
+
+        const wx = c * T + Math.floor(rng() * (T - 28)) + 14;
+        const wy = r * T + Math.floor(rng() * (T - 28)) + 14;
+
+        const roll = rng();
+        let key, frames, scale;
+        if (roll < 0.45) {
+          key = "ts-objects"; frames = TUFTS;        scale = SC;
+        } else if (roll < 0.75) {
+          key = "ts-objects"; frames = FLOWERS;      scale = SC;
+        } else if (roll < 0.90) {
+          key = "ts-objects"; frames = MUSHROOMS;    scale = SC;
+        } else {
+          key = "ts-stones";  frames = SMALL_STONES; scale = STONE_SC;
+        }
+        const frame = frames[Math.floor(rng() * frames.length)];
+        this.add.image(wx, wy, key, frame)
+          .setScale(scale).setOrigin(0.5, 1).setDepth(wy);
+      }
+    }
+
+    // Stone border along the path — small pebbles flanking it
+    const PEB_RNG = makeLcg(31415);
+    const placedStones = new Set();
+    for (let i = 0; i < PATH_PTS.length - 1; i++) {
+      const p0 = PATH_PTS[i], p1 = PATH_PTS[i + 1];
+      const steps = Math.ceil(Math.hypot(p1.x - p0.x, p1.y - p0.y) / 8);
+      for (let s = 0; s <= steps; s += 3) {
+        if (PEB_RNG() > 0.45) continue;
+        const tt = s / steps;
+        const px = p0.x + (p1.x - p0.x) * tt;
+        const py = p0.y + (p1.y - p0.y) * tt;
+        // Place a pebble nudged perpendicular to the path direction
+        const dx = p1.x - p0.x, dy = p1.y - p0.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len, ny = dx / len;
+        const side = PEB_RNG() > 0.5 ? 1 : -1;
+        const offset = 38 + Math.floor(PEB_RNG() * 8);
+        const sx = px + nx * offset * side;
+        const sy = py + ny * offset * side;
+        const sc = Math.floor(sx / T), sr = Math.floor(sy / T);
+        if (!isGrass(sc, sr)) continue;
+        const key = `${sc},${sr}`;
+        if (placedStones.has(key)) continue;
+        placedStones.add(key);
+        const stoneFrame = SMALL_STONES[Math.floor(PEB_RNG() * SMALL_STONES.length)];
+        this.add.image(sx, sy, "ts-stones", stoneFrame)
+          .setScale(2.2).setOrigin(0.5, 1).setDepth(sy);
+      }
+    }
   }
 
   // ── Trees (terrain-trees.png, 15 cols × 13 rows of 16px tiles) ──────────
@@ -242,20 +492,25 @@ class GardenScene extends Phaser.Scene {
       const depth = wy + (maxDr + 1) * TW;
       def.forEach(([dc, dr, spCol, spRow]) => {
         const frame = spRow * SCOLS + spCol;
-        this.add.image(wx + dc * TW, wy + dr * TW, "terrain-trees", frame)
+        this.add.image(wx + dc * TW, wy + dr * TW, "ts-trees", frame)
           .setScale(TSC).setOrigin(0, 0).setDepth(depth);
       });
     };
 
-    // Placed at world edges, clear of path, pond (x640-830,y190-380), patio (x450-770,y510-700)
+    // Placed at world edges & in the empty lower half — clear of path,
+    // pond (x640-830,y190-380), and the upper plant belt (rows 1-8).
     [
       { x:   5, y:   5, def: TREE_C },
       { x: 750, y:  10, def: TREE_A },
       { x:   5, y: 450, def: TREE_A },
       { x: 750, y: 420, def: TREE_C },
-      { x:   5, y: 870, def: TREE_B },
-      { x: 750, y: 900, def: TREE_B },
+      { x:   5, y: 700, def: TREE_B },
+      { x: 720, y: 720, def: TREE_A },
+      { x:  60, y: 870, def: TREE_B },
+      { x: 750, y: 900, def: TREE_C },
       { x: 300, y:1050, def: TREE_A },
+      { x: 600, y:1060, def: TREE_B },
+      { x:  20, y:1080, def: TREE_A },
     ].forEach(({ x, y, def }) => placeTree(x, y, def));
   }
 
@@ -303,10 +558,12 @@ class GardenScene extends Phaser.Scene {
       const wasPlantClick = this.plantClicked;
       this.plantClicked = false;
       if (drag && !hasMoved && !wasPlantClick) {
+        const wx = p.x + cam.scrollX - 450;
+        const wy = p.y + cam.scrollY - 100;
         if (this.propsRef.current.planting) {
-          const wx = p.x + cam.scrollX - 450;
-          const wy = p.y + cam.scrollY - 100;
           this.callbacksRef.current.onPlantAt?.(wx, wy);
+        } else if (this.propsRef.current.moving) {
+          this.callbacksRef.current.onMoveTo?.(wx, wy);
         } else {
           this.callbacksRef.current.setPressed?.(null);
         }
@@ -328,39 +585,74 @@ class GardenScene extends Phaser.Scene {
 
   addPlant(f, pressed) {
     const { x: px, y: py } = SVG_TO_PH(f.x, f.y);
-    const stage = f.stage ?? 5;
+    const stage = f.stage ?? 4;
     const si    = strHash(f.word) % 100;
-    const key   = spriteForStage(si, stage);
-    const sc    = scaleForStage(stage);
+    const key   = spriteForStage(si, stage, f.level);
 
-    const img = this.add.image(0, 0, key)
-      .setScale(sc)
-      .setOrigin(0.5, 1)
-      .setInteractive({ cursor: "pointer" });
+    const img = this.add.image(0, 0, key).setOrigin(0.5, 1);
+    // Scale to a target display height — works for both tiny (38px) old
+    // sprites and tall (256px) new flower sprites.
+    const targetH = targetHeightForStage(stage);
+    img.setScale(targetH / (img.height || targetH));
+
+    // Tight hit area — middle 55% wide × bottom 75% tall (in source pixels).
+    // The new 256×256 flower sprites have lots of transparent margin, so a
+    // default rectangle hit area would block clicks on neighboring tiles
+    // and break move-mode placement.
+    const hitW = img.width  * 0.55;
+    const hitH = img.height * 0.75;
+    const hitX = (img.width - hitW) / 2;
+    const hitY = img.height - hitH;
+    img.setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(hitX, hitY, hitW, hitH),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      cursor: "pointer",
+    });
 
     const isSelected = pressed?.word === f.word && pressed?.x === f.x && pressed?.y === f.y;
     if (isSelected) img.setTint(0xffe86a);
 
-    // Word label — sits on the flower head, theme picked by word hash
+    // Word label — sits on the flower head, theme picked by word hash.
+    // For plants with a reaction, a wider colored stroke is rendered as a
+    // back-layer to create a gem-trim ring around the cream outline.
     const theme = wordTheme(f.word);
-    const txt = this.add.text(0, -img.displayHeight * 0.78, f.word, {
+    const reaction = f.reactions?.[0];
+    const trimColor = reaction ? (REACTION_TRIM[reaction.emoji] || "#e87aa3") : null;
+    const wordY = -img.displayHeight * 0.78;
+    const wordStyle = {
       fontFamily: theme.fontFamily,
       fontStyle: phaserFontStyle(theme),
       fontSize: "14px",
       color: theme.color,
+      resolution: 2,
+    };
+
+    const trim = trimColor
+      ? this.add.text(0, wordY, f.word, { ...wordStyle, stroke: trimColor, strokeThickness: 9 })
+          .setOrigin(0.5, 0.5)
+      : null;
+
+    const txt = this.add.text(0, wordY, f.word, {
+      ...wordStyle,
       stroke: "#fffde8",
       strokeThickness: 5,
-      resolution: 2,
     }).setOrigin(0.5, 0.5);
 
-    // Reaction emoji — single compliment placed right beside the word
-    const containerChildren = [img, txt];
-    if (f.reactions && f.reactions.length > 0) {
-      const emoji = f.reactions[0].emoji;
+    // Stagger animations by plant so they aren't all in sync
+    const swayAngle = 2.5 + (si % 10) * 0.3;
+    const swayDur   = 1800 + (si % 12) * 180;
+    const swayDelay = (si % 20) * 130;
+
+    // Build the container child list:
+    //  pot → (optional gem-trim layer) → word → (optional reaction icon)
+    const containerChildren = trim ? [img, trim, txt] : [img, txt];
+
+    // Small emoji icon next to the word, kept for plants with a reaction
+    if (reaction) {
       const emojiTxt = this.add.text(
         txt.displayWidth / 2 + 2,
-        -img.displayHeight * 0.78,
-        emoji,
+        wordY,
+        reaction.emoji,
         { fontSize: "12px", resolution: 2 }
       ).setOrigin(0, 0.5);
       containerChildren.push(emojiTxt);
@@ -369,10 +661,7 @@ class GardenScene extends Phaser.Scene {
     // Container at base of plant — sway rotates around the pot bottom
     const container = this.add.container(px, py, containerChildren).setDepth(py);
 
-    // Sway — staggered per plant so they're out of phase
-    const swayAngle = 2.5 + (si % 10) * 0.3;
-    const swayDur   = 1800 + (si % 12) * 180;
-    const swayDelay = (si % 20) * 130;
+    // Sway — uses the staggered values declared above
     this.tweens.add({
       targets: container,
       angle: { from: -swayAngle, to: swayAngle },
@@ -431,22 +720,105 @@ class GardenScene extends Phaser.Scene {
     }
   }
 
+  // ── Weather ──────────────────────────────────────────────────────────────
+  setupWeather() {
+    // Weighted random — sunny most common, others sprinkle in for variety.
+    const TABLE = [
+      { type: "sunny",   weight: 4, label: "☀️ Sunny" },
+      { type: "rain",    weight: 2, label: "🌧️ Rainy" },
+      { type: "snow",    weight: 1, label: "❄️ Snowy" },
+      { type: "petals",  weight: 2, label: "🌸 Petals" },
+      { type: "leaves",  weight: 2, label: "🍃 Breezy" },
+    ];
+    const total = TABLE.reduce((s, w) => s + w.weight, 0);
+    let r = Math.random() * total, chosen = TABLE[0];
+    for (const w of TABLE) { r -= w.weight; if (r <= 0) { chosen = w; break; } }
+    this.weather = chosen.type;
+    this.weatherParticles = [];
+
+    // Tell React (via the viewport DOM element) what weather we picked.
+    const el = this.vpRef?.current;
+    if (el) el.dispatchEvent(new CustomEvent("weather", { detail: { type: chosen.type, label: chosen.label } }));
+
+    if (chosen.type === "sunny") return;
+    const counts = { rain: 90, snow: 55, petals: 32, leaves: 22 };
+    const count  = counts[chosen.type] ?? 30;
+    for (let i = 0; i < count; i++) this.weatherParticles.push(this._spawnWeatherP(chosen.type, false));
+  }
+
+  _spawnWeatherP(type, fromTop) {
+    const vw = this.scale.gameSize.width;
+    const vh = this.scale.gameSize.height;
+    const x  = Math.random() * vw;
+    const y  = fromTop ? -20 - Math.random() * 50 : Math.random() * vh;
+    let g;
+    if (type === "rain") {
+      g = this.add.rectangle(x, y, 1.5, 8, 0x9cc4ff, 0.55);
+      g.angle = -10;
+      g.vx = -1.5; g.vy = 11 + Math.random() * 5;
+    } else if (type === "snow") {
+      g = this.add.circle(x, y, 1.5 + Math.random() * 1, 0xffffff, 0.85);
+      g.vx = (Math.random() - 0.5) * 0.6;
+      g.vy = 0.8 + Math.random() * 0.8;
+      g.swayPhase = Math.random() * Math.PI * 2;
+    } else if (type === "petals") {
+      const colors = [0xffaad0, 0xffc8d8, 0xff7aa3, 0xffd0e0];
+      g = this.add.circle(x, y, 2 + Math.random() * 1.5,
+                          colors[Math.floor(Math.random() * colors.length)], 0.85);
+      g.vx = -1.6 - Math.random() * 0.8;
+      g.vy = 0.6 + Math.random() * 0.5;
+      g.swayPhase = Math.random() * Math.PI * 2;
+    } else if (type === "leaves") {
+      g = this.add.text(x, y, "🍃", { fontSize: "13px" }).setOrigin(0.5);
+      g.vx = -2.5 - Math.random() * 1.5;
+      g.vy = -0.3 + (Math.random() - 0.5) * 0.6;
+      g.spinSpeed = (Math.random() - 0.5) * 4;
+    }
+    if (g) {
+      g.setScrollFactor(0);   // stay fixed in viewport
+      g.setDepth(5000);       // above everything
+    }
+    return g;
+  }
+
+  _stepWeather(time) {
+    if (!this.weatherParticles?.length) return;
+    const vw = this.scale.gameSize.width;
+    const vh = this.scale.gameSize.height;
+    for (const p of this.weatherParticles) {
+      if (!p) continue;
+      // Soft sway for snow/petals
+      if (p.swayPhase !== undefined) {
+        p.x += Math.sin((time / 600) + p.swayPhase) * 0.3;
+      }
+      if (p.spinSpeed) p.angle += p.spinSpeed;
+      p.x += p.vx;
+      p.y += p.vy;
+      // Wrap
+      if (p.y > vh + 30) { p.y = -30 - Math.random() * 40; p.x = Math.random() * vw; }
+      if (p.y < -60)     { p.y = vh + 10;                  p.x = Math.random() * vw; }
+      if (p.x < -30)     { p.x = vw + 30;                  p.y = Math.random() * vh; }
+      if (p.x > vw + 30) { p.x = -30;                      p.y = Math.random() * vh; }
+    }
+  }
+
   update(time, delta) {
     const dt = delta / 1000;
     this.stepAnimal(this.catState, this.catSprite, 20, [170, 770], [300, 1000], dt);
+    this._stepWeather(time);
   }
 }
 
 // ── React wrapper ─────────────────────────────────────────────────────────────
-export function GardenWorld({ vpRef, pressed, setPressed, plantedSeeds = [], planting, onPlantAt }) {
+export function GardenWorld({ vpRef, pressed, setPressed, plantedSeeds = [], planting, moving, onPlantAt, onMoveTo }) {
   const containerRef    = useRef(null);
   const gameRef         = useRef(null);
-  const propsRef        = useRef({ plantedSeeds, pressed, planting });
-  const callbacksRef    = useRef({ setPressed, onPlantAt });
+  const propsRef        = useRef({ plantedSeeds, pressed, planting, moving });
+  const callbacksRef    = useRef({ setPressed, onPlantAt, onMoveTo });
 
   // Keep refs current every render so scene always reads latest values
-  propsRef.current   = { plantedSeeds, pressed, planting };
-  callbacksRef.current = { setPressed, onPlantAt };
+  propsRef.current   = { plantedSeeds, pressed, planting, moving };
+  callbacksRef.current = { setPressed, onPlantAt, onMoveTo };
 
   // Propagate React state changes to the running scene
   useEffect(() => {
