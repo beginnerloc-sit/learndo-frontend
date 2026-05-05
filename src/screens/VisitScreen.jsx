@@ -5,8 +5,9 @@ import { QuizModal, buildQuiz } from "../components/QuizModal";
 import { GiftPickerPanel } from "../components/GiftPickerPanel";
 import { CollectionPanel } from "../components/CollectionPanel";
 import { useVocabulary } from "../hooks/useVocabulary";
+import { useCurrentUser } from "../hooks/useUser";
 import { fetchWordQuiz } from "../api/vocabulary";
-import { reactToPlant } from "../api/leaderboard";
+import { reactToPlant, writeNoteOnPlant } from "../api/leaderboard";
 
 const REACTION_EMOJIS = ["🌸", "💧", "✨", "🌟", "💕", "🌈"];
 
@@ -22,14 +23,36 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
   const [translateLoading, setTranslateLoading] = useState(false);
   const [showGift, setShowGift] = useState(false);
   const [showCollection, setShowCollection] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState("");
 
   const { data: gardenPlants } = useVocabulary(friend?.id);
+  const { data: me } = useCurrentUser();
+  const myId = me?.id ?? "me";
 
   useEffect(() => {
-    if (gardenPlants && !initialized.current) {
+    if (!gardenPlants) return;
+    if (!initialized.current) {
       initialized.current = true;
       setPlantedSeeds(gardenPlants);
+      return;
     }
+    // Merge social fields from periodic refetches without overwriting any
+    // local optimistic updates (e.g. a reaction the visitor just sent).
+    const remoteByWord = new Map(gardenPlants.map(p => [p.word, p]));
+    setPlantedSeeds(prev => prev.map(p => {
+      const r = remoteByWord.get(p.word);
+      if (!r) return p;
+      // Local reaction wins if visitor just sent one this session
+      const reactions = (p.reactions?.length ?? 0) > (r.reactions?.length ?? 0)
+        ? p.reactions : (r.reactions ?? p.reactions);
+      return {
+        ...p,
+        reactions,
+        notes: r.notes ?? p.notes,
+      };
+    }));
   }, [gardenPlants]);
 
   useEffect(() => {
@@ -66,6 +89,36 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
     onTranslateWin?.(word, lang);
   }, [onTranslateWin]);
 
+  const handleSubmitNote = useCallback(async () => {
+    if (!pressedSeed || !friend) return;
+    const text = noteDraft.trim();
+    if (!text) { setNoteError("Write something first"); return; }
+    setNoteSaving(true); setNoteError("");
+    try {
+      const saved = await writeNoteOnPlant(friend.id, pressedSeed.word, text);
+      // Optimistically merge into local state — replace any existing note
+      // from the current visitor (server already de-dups by from_user_id).
+      setPlantedSeeds(s => s.map(seed => {
+        if (seed.word !== pressedSeed.word) return seed;
+        const others = (seed.notes || []).filter(n => n.from_user_id !== saved.from_user_id);
+        return { ...seed, notes: [saved, ...others] };
+      }));
+      setNoteDraft("");
+    } catch (e) {
+      setNoteError(e.message || "Failed");
+    } finally {
+      setNoteSaving(false);
+    }
+  }, [pressedSeed, friend, noteDraft]);
+
+  // Reset the draft + error when switching plants. Notes are write-once so
+  // we DON'T prefill the input with an existing note — the existing one is
+  // shown read-only in the side panel.
+  useEffect(() => {
+    setNoteError("");
+    setNoteDraft("");
+  }, [pressedSeed?.word, friend, myId]);
+
   const handleReact = useCallback(async (emoji) => {
     if (!pressedSeed || !friend) return;
     try {
@@ -99,7 +152,21 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
       ? pressedSeed.exampleSentence.replace(/___/g, pressed.word)
       : null;
 
-    cardEl = (
+    // Side notes panel — same positioning logic as GardenScreen.
+    const NOTES_W = 130, GAP = 8;
+    const vw = cam.vw || 360;
+    const rightEnd = screenX + cardHW + GAP + NOTES_W;
+    const notesOnLeft = rightEnd > vw - 8;
+    const notesLeft = notesOnLeft ? screenX - cardHW - GAP : screenX + cardHW + GAP;
+
+    const allNotes = pressedSeed.notes ?? [];
+    const myNote   = allNotes.find(n => n.from_user_id === myId) ?? null;
+    const otherNotes = allNotes.filter(n => n.from_user_id !== myId);
+    // Visitor's own note shown FIRST so it's easy to find/edit.
+    const orderedNotes = myNote ? [myNote, ...otherNotes] : otherNotes;
+    const hasMyNote = !!myNote;
+
+    cardEl = (<>
       <div
         className={`word-card${flipBelow ? " below" : ""}`}
         style={{ left: screenX, top: screenY, "--lang-color": pressedSeed.langColor || "#5a9eb8", "--arrow-x": `${arrowOffset}px` }}
@@ -115,21 +182,60 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
         {example && <div className="wc-example">"{example}"</div>}
 
         {existingReaction && (
-          <div className="wc-reactions" style={{ marginTop: 6 }}>
-            <span className="wc-reaction" title={existingReaction.from_name}>{existingReaction.emoji}</span>
-            <span style={{ fontSize: 9, color: "#8a6a3a", fontFamily: "'Lilita One',sans-serif" }}>
-              from {existingReaction.from_name}
-            </span>
-          </div>
+          <>
+            <div className="wc-section-title">🎁 Gift</div>
+            <div className="wc-reactions" style={{ marginTop: 2 }}>
+              <span className="wc-reaction" title={existingReaction.from_name}>{existingReaction.emoji}</span>
+              <span style={{ fontSize: 9, color: "#8a6a3a", fontFamily: "'Lilita One',sans-serif" }}>
+                from {existingReaction.from_name}
+              </span>
+            </div>
+          </>
         )}
 
         {canCompliment && (
-          <div className="visit-react-row">
-            {REACTION_EMOJIS.map(emoji => (
-              <button key={emoji} className="visit-react-btn" onClick={() => handleReact(emoji)}>
-                {emoji}
+          <>
+            <div className="wc-section-title">🎁 Gift {name} a reaction</div>
+            <div className="visit-react-row">
+              {REACTION_EMOJIS.map(emoji => (
+                <button key={emoji} className="visit-react-btn" onClick={() => handleReact(emoji)}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Notes are write-once. If the visitor has already left a note,
+            it's shown read-only in the side panel — we just show a locked
+            label here. Otherwise, the compose input is shown. */}
+        {hasMyNote ? (
+          <div className="visit-note-locked">
+            ✓ You've already left a note on this plant
+          </div>
+        ) : (
+          <div className="visit-note-compose">
+            <div className="visit-note-compose-title">📝 Leave a note for {name} (one-time)</div>
+            <input
+              className="visit-note-input"
+              type="text"
+              placeholder="One short sentence…"
+              value={noteDraft}
+              onChange={e => setNoteDraft(e.target.value.slice(0, 80))}
+              maxLength={80}
+              onKeyDown={e => { if (e.key === "Enter" && !noteSaving && noteDraft.trim()) handleSubmitNote(); }}
+            />
+            <div className="visit-note-foot">
+              <span className="visit-note-counter">{noteDraft.length}/80</span>
+              <button
+                className="visit-note-submit"
+                onClick={handleSubmitNote}
+                disabled={noteSaving || !noteDraft.trim()}
+              >
+                {noteSaving ? "…" : "SEND"}
               </button>
-            ))}
+            </div>
+            {noteError && <div className="visit-note-error">{noteError}</div>}
           </div>
         )}
 
@@ -151,7 +257,28 @@ export function VisitScreen({ friend, onClose, onTranslateWin }) {
           🌐 {translateLoading ? "LOADING…" : "TRANSLATE IT"}
         </button>
       </div>
-    );
+
+      {orderedNotes.length > 0 && (
+        <div
+          className={`plant-notes-side${flipBelow ? " below" : ""} ${notesOnLeft ? "on-left" : "on-right"}`}
+          style={{ left: notesLeft, top: screenY }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="plant-notes-title">💬 Notes</div>
+          {orderedNotes.slice(0, 4).map((n, i) => (
+            <div
+              key={`${n.from_user_id}-${i}`}
+              className={`plant-note${n.from_user_id === myId ? " mine" : ""}`}
+            >
+              <div className="plant-note-from">
+                {n.from_user_id === myId ? "You" : n.from_name}
+              </div>
+              <div className="plant-note-text">"{n.text}"</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>);
   }
 
   return (

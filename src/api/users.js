@@ -11,12 +11,21 @@ function norm(u) {
     streak: u.streak,
     coins: u.coins,
     plantsCount: u.plants_count,
+    harvestCount: u.harvest_count ?? 0,
     visitsCount: u.visits_count,
     langPrefs: u.lang_prefs ?? [],
     vocabLevel: u.vocab_level ?? null,
     topicPrefs: u.topic_prefs ?? [],
     definitionLang: u.definition_lang ?? "english",
     collectionLocked: !!u.collection_locked,
+    tutorialCompleted: !!u.tutorial_completed,
+    streakCheck: u.streak_check
+      ? {
+          firstToday:     !!u.streak_check.first_today,
+          wasConsecutive: !!u.streak_check.was_consecutive,
+          streak:         u.streak_check.streak ?? u.streak ?? 0,
+        }
+      : null,
   };
 }
 
@@ -36,6 +45,13 @@ export async function fetchFriends() {
 export async function searchUsers(q) {
   const res = await fetch(`${BASE}/users/search?q=${encodeURIComponent(q)}`, { headers: authHeader() });
   if (!res.ok) throw new Error("Search failed");
+  const list = await res.json();
+  return list.map(norm);
+}
+
+export async function fetchFriendSuggestions(limit = 5) {
+  const res = await fetch(`${BASE}/users/suggestions?limit=${limit}`, { headers: authHeader() });
+  if (!res.ok) throw new Error("Failed to fetch suggestions");
   const list = await res.json();
   return list.map(norm);
 }
@@ -129,5 +145,14 @@ export async function updateCollectionLock(locked) {
     body: JSON.stringify({ locked }),
   });
   if (!res.ok) throw new Error("Failed to update collection lock");
+  return norm(await res.json());
+}
+
+export async function completeTutorial() {
+  const res = await fetch(`${BASE}/users/me/tutorial-complete`, {
+    method: "POST",
+    headers: authHeader(),
+  });
+  if (!res.ok) throw new Error("Failed to mark tutorial complete");
   return norm(await res.json());
 }

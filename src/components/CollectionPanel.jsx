@@ -147,9 +147,19 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
   const [langFilter, setLangFilter] = React.useState("");
   const [reactionFilter, setReactionFilter] = React.useState("");
   const [filtersOpen, setFiltersOpen] = React.useState(false);
-  const [locked, setLocked] = React.useState(currentUser?.collection_locked ?? currentUser?.collectionLocked ?? false);
+  const [locked, setLocked] = React.useState(!!(currentUser?.collectionLocked ?? currentUser?.collection_locked ?? false));
   const [lockBusy, setLockBusy] = React.useState(false);
   const qc = useQueryClient();
+
+  // Sync local lock state when the user prop arrives/updates. useState only
+  // reads its initial value once, so without this the toggle would render
+  // stale (showing "unlocked" even when the API says "locked") on the first
+  // load before currentUser hydrates.
+  React.useEffect(() => {
+    if (currentUser == null) return;
+    const next = !!(currentUser.collectionLocked ?? currentUser.collection_locked ?? false);
+    setLocked(next);
+  }, [currentUser?.collectionLocked, currentUser?.collection_locked]);
 
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -183,9 +193,12 @@ export function CollectionPanel({ onClose, friend = null, currentUser = null, on
     setLockBusy(true);
     try {
       const updated = await updateCollectionLock(!locked);
-      setLocked(updated.collectionLocked);
+      setLocked(!!updated.collectionLocked);
       onLockChange?.(updated.collectionLocked);
-      qc.invalidateQueries({ queryKey: ["currentUser"] });
+      // Correct query key — useCurrentUser uses ["user", "me"], not ["currentUser"].
+      // Without this, AppShell + GardenScreen would keep a stale `collectionLocked`
+      // in their cached user object until the next staleTime expiry.
+      qc.invalidateQueries({ queryKey: ["user", "me"] });
     } catch {
       // ignore
     } finally {

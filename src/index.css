@@ -137,6 +137,446 @@ button { font-family: var(--font-body); }
   box-shadow: 0 2px 0 #5a3e1a;
 }
 
+/* ── Word notes — sibling panel beside the plant info card ── */
+/* Positioned via inline left/top from JS; transform anchors the panel's
+   inner edge against the card's outer edge so they sit flush. */
+.plant-notes-side {
+  position: absolute; z-index: 10;
+  width: 130px; pointer-events: auto;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 9px 9px;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 14px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 14px -5px rgba(40,30,12,0.4);
+  animation: cardPop 220ms cubic-bezier(0.34,1.56,0.64,1) backwards;
+}
+/* Right-of-card: align panel's LEFT edge to (screenX + cardHW + gap)  */
+.plant-notes-side.on-right          { transform: translate(0%, -100%) translateY(-12px); }
+.plant-notes-side.on-right.below    { transform: translate(0%,    0%) translateY(12px); }
+/* Left-of-card: align panel's RIGHT edge to (screenX - cardHW - gap)  */
+.plant-notes-side.on-left           { transform: translate(-100%, -100%) translateY(-12px); }
+.plant-notes-side.on-left.below     { transform: translate(-100%,    0%) translateY(12px); }
+.plant-notes-title {
+  font-family: "Lilita One", sans-serif;
+  font-size: 10px; color: #7a5c3a; letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.plant-note {
+  background: #fff8e8;
+  border: 1px solid #c9a87a; border-radius: 8px;
+  padding: 4px 7px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+/* Visitor's own note in the side panel — stand out so they can spot it
+   for editing. Soft green tint to read as "this is yours". */
+.plant-note.mine {
+  background: linear-gradient(180deg, #e3f0d4 0%, #cfe1b8 100%);
+  border-color: #88b266;
+  box-shadow: inset 0 0 0 1px rgba(255, 253, 232, 0.5);
+}
+.plant-note.mine .plant-note-from { color: #3e6534; }
+.plant-note-from {
+  font-family: "Lilita One", sans-serif; font-size: 9px;
+  color: #6e4e2c; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.plant-note-text {
+  font-family: "Caprasimo", serif; font-size: 11px;
+  color: #1c2c19; line-height: 1.25;
+  word-break: break-word;
+}
+
+/* ── Section titles inside the word card (Reactions / Notes) ── */
+.wc-section-title {
+  font-family: "Lilita One", sans-serif;
+  font-size: 10px; color: #7a5c3a; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed #c9a87a;
+}
+
+/* ── "A word to {friend}" — visitor compose UI inside the card ── */
+.visit-note-compose {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed #c9a87a;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.visit-note-compose-title {
+  font-family: "Lilita One", sans-serif;
+  font-size: 10px; color: #3e6534; letter-spacing: 0.04em;
+}
+/* Shown after the visitor has used their one-time note slot. */
+.visit-note-locked {
+  margin-top: 8px;
+  padding: 6px 8px;
+  font-family: "Lilita One", sans-serif;
+  font-size: 10px; color: #3e6534; letter-spacing: 0.04em;
+  background: #e8f5e2;
+  border: 1px dashed #88b266; border-radius: 8px;
+  text-align: center;
+}
+.visit-note-input {
+  width: 100%;
+  font-family: var(--font-body); font-size: 12px; color: #1c2c19;
+  background: #fffdf5;
+  border: 1.5px solid #c9a87a; border-radius: 8px;
+  padding: 5px 7px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.visit-note-input:focus { border-color: #5a9333; }
+.visit-note-foot {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.visit-note-counter {
+  font-family: "Lilita One", sans-serif; font-size: 9px; color: #b09070;
+}
+.visit-note-submit {
+  font-family: "Lilita One", sans-serif; font-size: 10px; letter-spacing: 0.06em;
+  background: linear-gradient(180deg,#cfe8be,#9cc47b);
+  border: 1.5px solid #3e6534; color: #1c4a10; cursor: pointer;
+  border-radius: 8px;
+  padding: 3px 10px;
+  box-shadow: 0 2px 0 #3e6534;
+}
+.visit-note-submit:disabled {
+  opacity: 0.55; cursor: not-allowed;
+  background: linear-gradient(180deg,#e0e0e0,#aaa); border-color: #555; color: #fff; box-shadow: 0 2px 0 #555;
+}
+.visit-note-error {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #c1325a;
+}
+
+/* ── First-login gameplay guide — swipeable multi-page card ── */
+.guide-backdrop {
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(28,18,8,0.7);
+  display: grid; place-items: center;
+  padding: 18px;
+  animation: guideFadeIn 0.25s ease;
+}
+@keyframes guideFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.guide-card {
+  width: 100%; max-width: 320px;
+  padding: 14px 18px 12px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(120,200,140,0.42) 0%, transparent 60%),
+    linear-gradient(180deg, #fffdf5 0%, #f3ecdc 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 22px;
+  box-shadow: 0 5px 0 #5a3e1a, 0 14px 28px -6px rgba(40,30,12,0.55);
+  text-align: center;
+  user-select: none; touch-action: pan-y;
+  animation: guidePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes guidePop {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.85); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.guide-progress {
+  display: flex; justify-content: center; gap: 4px;
+  margin-bottom: 10px;
+}
+.guide-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: #d6c7a3; cursor: pointer;
+  transition: background 0.2s, width 0.2s;
+}
+.guide-dot.active { background: #5a9333; width: 18px; }
+.guide-dot.done   { background: #88b266; }
+
+/* Each page swaps in with a tiny pop so swipes feel responsive */
+.guide-page {
+  animation: guidePageIn 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes guidePageIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.guide-icon {
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 0 14px rgba(120, 200, 140, 0.55));
+  animation: guideIconBob 1.4s ease-in-out infinite alternate;
+}
+@keyframes guideIconBob {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-4px) scale(1.06); }
+}
+.guide-title {
+  font-family: "Lilita One", sans-serif; font-size: 18px;
+  color: #3e2a16; letter-spacing: 0.04em;
+  margin-top: 8px;
+}
+.guide-body {
+  font-size: 13px; line-height: 1.5;
+  color: #5a3e1a;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+
+/* Mutation grid (last page) */
+.guide-mutation-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  margin-top: 12px;
+}
+.guide-mutation {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: #fffdf5;
+  border: 1.5px solid #c9a87a; border-radius: 10px;
+  text-align: left;
+}
+.guide-mutation-emoji {
+  font-size: 20px; line-height: 1; flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(255, 220, 140, 0.5));
+}
+.guide-mutation-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.guide-mutation-name {
+  font-family: "Lilita One", sans-serif; font-size: 10px;
+  color: #3e2a16; letter-spacing: 0.04em;
+}
+.guide-mutation-blurb {
+  font-size: 9.5px; line-height: 1.25; color: #6e4e2c;
+}
+.guide-mutation-cherry  { border-color: #e87aa3; }
+.guide-mutation-dewdrop { border-color: #5abde8; }
+.guide-mutation-sparkle { border-color: #e8a91a; }
+.guide-mutation-star    { border-color: #f3c14a; }
+.guide-mutation-heart   { border-color: #e0526d; }
+.guide-mutation-rainbow {
+  background:
+    linear-gradient(#fffdf5, #fffdf5) padding-box,
+    linear-gradient(90deg, #ff8b8b, #ffd97a, #88e07a, #5abde8, #b288ff) border-box;
+  border: 1.5px solid transparent;
+}
+
+.guide-actions {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 14px;
+}
+.guide-skip {
+  font-family: "Lilita One", sans-serif; font-size: 11px; letter-spacing: 0.06em;
+  color: #7a5c3a; background: transparent; border: none; cursor: pointer;
+  padding: 6px 8px;
+}
+.guide-skip:hover { color: #3e2a16; }
+.guide-next { flex: 1; font-size: 13px; }
+.guide-swipe-hint {
+  margin-top: 6px;
+  font-family: "Lilita One", sans-serif; font-size: 9px;
+  color: #b09070; letter-spacing: 0.12em;
+  text-align: center;
+  opacity: 0.8;
+}
+.tutorial-progress {
+  display: flex; justify-content: center; gap: 4px;
+  margin-bottom: 10px;
+}
+.tutorial-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: #d6c7a3;
+  transition: background 0.2s, transform 0.2s, width 0.2s;
+}
+.tutorial-dot.active { background: #5a9333; width: 18px; }
+.tutorial-dot.done   { background: #88b266; }
+.tutorial-emoji {
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 0 14px rgba(120,200,140,0.55));
+  animation: tutorialEmojiBob 1.4s ease-in-out infinite alternate;
+}
+@keyframes tutorialEmojiBob {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-4px) scale(1.06); }
+}
+.tutorial-title {
+  font-family: "Lilita One", sans-serif;
+  font-size: 18px; color: #3e2a16;
+  margin-top: 8px; letter-spacing: 0.04em;
+}
+.tutorial-body {
+  font-size: 13px; line-height: 1.5;
+  color: #5a3e1a;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+.tutorial-actions {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 16px;
+}
+.tutorial-skip {
+  font-family: "Lilita One", sans-serif; font-size: 11px; letter-spacing: 0.06em;
+  color: #7a5c3a; background: transparent; border: none; cursor: pointer;
+  padding: 6px 8px;
+}
+.tutorial-skip:hover { color: #3e2a16; }
+.tutorial-next { flex: 1; font-size: 13px; }
+
+/* ── Daily check-in modal ── */
+.daily-checkin-backdrop { z-index: 60; }
+.daily-checkin-modal {
+  max-width: 320px; width: 100%;
+  padding: 18px 18px 16px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 200, 100, 0.45) 0%, transparent 65%),
+    linear-gradient(180deg, #fffdf5 0%, #f3ecdc 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 22px;
+  box-shadow: 0 5px 0 #5a3e1a, 0 14px 26px -8px rgba(40,30,12,0.5);
+  text-align: center;
+  animation: checkinPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes checkinPop {
+  0%   { opacity: 0; transform: scale(0.5) rotate(-6deg); }
+  60%  { opacity: 1; transform: scale(1.05) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.dc-flame {
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 0 18px rgba(255, 130, 60, 0.7));
+  animation: flameBob 1.2s ease-in-out infinite alternate;
+}
+@keyframes flameBob {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-3px) scale(1.06); }
+}
+.dc-streak-num {
+  font-family: "Lilita One", sans-serif;
+  font-size: 52px; line-height: 1; color: #c1325a;
+  margin-top: 4px;
+  text-shadow: 0 2px 0 #5a3e1a;
+}
+.dc-headline {
+  font-family: "Lilita One", sans-serif;
+  font-size: 18px; color: #3e2a16;
+  margin-top: 6px; letter-spacing: 0.04em;
+}
+.dc-sub {
+  font-size: 12px; color: #7a5c3a;
+  margin-top: 4px; line-height: 1.4;
+}
+.dc-week {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  margin-top: 14px;
+}
+.dc-day {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 5px 0 6px;
+  background: #f3ecdc;
+  border: 1.5px solid #c9a87a; border-radius: 10px;
+  transition: transform 0.1s;
+}
+.dc-day.done {
+  background: linear-gradient(180deg, #ffd96a 0%, #e8a91a 100%);
+  border-color: #6e4e0e;
+}
+.dc-day.today {
+  background: linear-gradient(180deg, #ffb066 0%, #e87a3a 100%);
+  border-color: #a83a1a;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 0 #a83a1a, 0 6px 10px -3px rgba(180,60,20,0.45);
+}
+.dc-day-label {
+  font-family: "Lilita One", sans-serif;
+  font-size: 9px; color: #6e4e2c; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dc-day.done .dc-day-label { color: #5a3e1a; }
+.dc-day.today .dc-day-label { color: #fffbe9; text-shadow: 0 1px 0 #7d2235; }
+.dc-day-mark {
+  font-family: "Lilita One", sans-serif;
+  font-size: 14px; line-height: 1; color: #b09070;
+}
+.dc-day.done .dc-day-mark { color: #5a3e1a; }
+.dc-day.today .dc-day-mark { font-size: 16px; }
+
+/* ── Zoom controls (Garden) ── */
+/* Sit on the right edge above the bottom action bar so they're reachable
+   with the right thumb on a phone. */
+.zoom-controls {
+  position: absolute; right: 12px; bottom: 110px; z-index: 6;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.zoom-btn {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(180deg, #fff 0%, #f3ecdc 100%);
+  border: 2px solid #5a3e1a; color: #3e2a16; cursor: pointer;
+  display: grid; place-items: center;
+  box-shadow: 0 3px 0 #5a3e1a;
+  transition: transform 0.08s;
+  padding: 0;
+}
+.zoom-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #5a3e1a; }
+
+/* ── Hanging owner sign (Garden screen) ── */
+/* Sits below the top-bar row so long names can't push icons off-screen.
+   Visually a wooden plank dangling from two ropes anchored to the top. */
+.garden-sign-hang {
+  position: absolute; top: 0; left: 50%;
+  z-index: 4;            /* below sky-bar (z:5) so pills/icons stay tappable */
+  pointer-events: none;  /* purely decorative — never blocks taps */
+  display: flex; flex-direction: column; align-items: center;
+  width: max-content; max-width: min(78vw, 360px);
+  /* Sway the whole assembly (ropes + board) around the ceiling anchor */
+  transform-origin: top center;
+  animation: gardenSignSway 3.6s ease-in-out infinite alternate;
+  /* combine centering translateX with the sway's rotate via the keyframes */
+}
+.garden-sign-rope {
+  position: absolute; top: 0;
+  width: 2px; height: 50px;
+  background: linear-gradient(180deg, #6b4a25 0%, #3e2a16 100%);
+  border-radius: 0 0 999px 999px;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15);
+  transform-origin: top center;
+}
+.garden-sign-rope.l { left: 14px;   transform: rotate(8deg); }
+.garden-sign-rope.r { right: 14px;  transform: rotate(-8deg); }
+
+.garden-sign-board {
+  margin-top: 46px;       /* pulls below the rope length */
+  padding: 5px 18px 6px;
+  background: linear-gradient(180deg, #dcc28e 0%, #b89260 100%);
+  border: 2.5px solid #5a3e1a; border-radius: 14px;
+  box-shadow: 0 3px 0 #5a3e1a, 0 6px 12px -3px rgba(40,30,12,0.35);
+  /* wood-plank texture: subtle horizontal grain */
+  background-image:
+    linear-gradient(180deg, transparent 35%, rgba(90,62,26,0.08) 36%, transparent 38%,
+                            transparent 64%, rgba(90,62,26,0.08) 65%, transparent 67%),
+    linear-gradient(180deg, #dcc28e 0%, #b89260 100%);
+  /* Two "nail heads" near the top corners where the ropes attach */
+  position: relative;
+  /* Truncate names that are absurdly long, but allow normal-length names full visibility */
+  max-width: 100%;
+  overflow: hidden;
+}
+.garden-sign-board::before,
+.garden-sign-board::after {
+  content: ""; position: absolute; top: 4px;
+  width: 5px; height: 5px; border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #6e4e2c 0%, #2a1c0e 80%);
+  border: 1px solid #5a3e1a;
+}
+.garden-sign-board::before { left: 6px; }
+.garden-sign-board::after  { right: 6px; }
+.garden-sign-board h1 {
+  font-family: "Lilita One", sans-serif; font-size: 13px; font-weight: 400;
+  color: #fffbe9; margin: 0; line-height: 1.1;
+  text-shadow: 0 1px 0 #5a3e1a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+@keyframes gardenSignSway {
+  /* keep the centering translateX so the assembly stays anchored to the
+     middle of the screen while it sways gently around the ceiling pivot */
+  from { transform: translateX(-50%) rotate(-1.5deg); }
+  to   { transform: translateX(-50%) rotate(1.5deg); }
+}
+
 /* ── Pannable world stage ── */
 .stage {
   position: absolute; left: 0; right: 0; top: 48px; bottom: 86px;
@@ -1394,10 +1834,13 @@ button { font-family: var(--font-body); }
   width: 22px; height: 22px; border-radius: 999px;
   background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
   color: #5a3e1a; border: 1.5px solid #5a3e1a;
-  font-size: 14px; line-height: 1; cursor: pointer; padding: 0;
-  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 0 #5a3e1a;
 }
+/* SVG icon child centers cleanly in the flex parent (the unicode × glyph
+   doesn't, which is why this button used to look offset). */
+.lab-slot-clear > svg { display: block; }
 .lab-slot-clear:active { transform: translateY(1px); box-shadow: 0 1px 0 #5a3e1a; }
 
 /* Middle column with BREED button */
@@ -1478,7 +1921,9 @@ button { font-family: var(--font-body); }
 .lab-bench {
   flex-shrink: 0; flex-grow: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  /* Fixed at 3 columns so each card is wider — easier to grab AND leaves
+     enough horizontal space to flick-scroll without grabbing a card. */
+  grid-template-columns: repeat(3, 1fr);
   align-content: start;
   gap: 8px;
   padding: 10px 12px 18px;
@@ -2374,6 +2819,22 @@ button { font-family: var(--font-body); }
 }
 .friend-remove-btn:hover:not(:disabled) { background: #f8d4cc; border-color: #a83a4a; color: #a83a4a; }
 .friend-remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Shuffle button next to the "Suggested gardeners" header */
+.friend-shuffle {
+  width: 22px; height: 22px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #fffbe9 0%, #f3ecdc 100%);
+  border: 1.5px solid #5a3e1a; border-radius: 999px;
+  color: #5a3e1a; cursor: pointer;
+  box-shadow: 0 2px 0 #5a3e1a;
+  transition: transform 0.18s;
+}
+.friend-shuffle:active { transform: translateY(1px); box-shadow: 0 1px 0 #5a3e1a; }
+.friend-shuffle:disabled { opacity: 0.55; cursor: not-allowed; animation: friendShuffleSpin 0.6s linear infinite; }
+@keyframes friendShuffleSpin {
+  to { transform: rotate(360deg); }
+}
 
 .friend-tag {
   font-family: "Lilita One", sans-serif; font-size: 10px;

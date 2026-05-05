@@ -51,6 +51,19 @@ export async function reactToPlant(ownerUserId, word, emoji) {
   return res.json();
 }
 
+export async function writeNoteOnPlant(ownerUserId, word, text) {
+  const res = await fetch(`${BASE}/garden/note`, {
+    method: "POST",
+    headers: { ...authHeader(), "Content-Type": "application/json" },
+    body: JSON.stringify({ owner_user_id: ownerUserId, word, text }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to save note");
+  }
+  return res.json();
+}
+
 export async function fetchPendingGifts() {
   const res = await fetch(`${BASE}/garden/pending-gifts`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to fetch pending gifts");

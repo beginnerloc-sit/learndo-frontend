@@ -167,7 +167,26 @@ class GardenScene extends Phaser.Scene {
     this.vpRef        = reg.get("vpRef");
 
     this.plantLayer   = this.add.layer();
+    this.fxLayer      = this.add.layer();         // particles + drop dust above plants
     this.plantClicked = false;
+
+    // ── Physics grid bookkeeping ────────────────────────────────────────
+    // CELL = 64px (16×4). World cell coords: col = floor(x/64), row = floor(y/64).
+    // `plantableCells`  = Set of "col,row" strings where a seed *can* be planted.
+    // `occupiedCells`   = Map "col,row" → plant.id (rebuilt on every props update).
+    // `prevSeedById`    = Map plant.id → snapshot of the last-rendered seed,
+    //                     used to detect newly-added seeds (drop animation) and
+    //                     stage advances (growth pop).
+    this.CELL = 64;
+    this.plantableCells = new Set();
+    this.occupiedCells  = new Map();
+    this.prevSeedById   = new Map();
+    this._didFirstRender = false;
+    // All plants (and their FX) render above world objects. Trees/fences/etc.
+    // sort by their world Y (max ~2400), so a 10000-base keeps plants above
+    // everything map-related while still letting them sort against each other
+    // by Y for top-down depth ordering.
+    this.PLANT_DEPTH_BASE = 10000;
 
     // If a custom map JSON is loaded, render from it; otherwise fall back
     // to the procedural builder.
@@ -184,6 +203,7 @@ class GardenScene extends Phaser.Scene {
     this.setupInput();
     this.setupWeather();
     this.setupExternalResetBridge();
+    this.setupGridPreview();
 
     // Register scene so React can call updateFromProps
     reg.set("scene", this);
@@ -204,18 +224,37 @@ class GardenScene extends Phaser.Scene {
     const GROUND_SETS = new Set([
       "ts-grass", "ts-grass-dark", "ts-dirt", "ts-water", "ts-brick",
     ]);
+    // Tile-set → plantability contribution.
+    //   true  = grass-style ground (a cell needs at least one of these)
+    //   false = blocks the cell (water/path/brick + trees/fences/objects/stones)
+    //   null  = doesn't affect plantability
+    const PLANT_GRASS_SETS  = new Set(["ts-grass", "ts-grass-dark"]);
+    const PLANT_BLOCK_SETS  = new Set([
+      "ts-water", "ts-dirt", "ts-brick", "ts-fence",
+      "ts-trees", "ts-big-trees", "ts-objects", "ts-stones",
+    ]);
+
     let groundIdx = 0;
+    const grass    = new Set();   // "col,row" cells with at least one grass tile
+    const blocked  = new Set();   // cells with any obstacle/non-grass ground
+
     for (const t of tiles) {
       if (!t || !t.set) continue;
       const isGround = GROUND_SETS.has(t.set);
-      // Tiny epsilon offsets keep ground tiles in placement order without
-      // letting them ever climb above plants/trees.
       const depth = isGround ? -2000 + (groundIdx++ * 0.0001) : (t.y || 0);
       this.add.image(t.x, t.y, t.set, t.frame)
         .setScale(t.scale ?? 4)
         .setOrigin(0.5, 0.5)
         .setDepth(depth);
+
+      const col = Math.floor((t.x ?? 0) / this.CELL);
+      const row = Math.floor((t.y ?? 0) / this.CELL);
+      const key = `${col},${row}`;
+      if (PLANT_GRASS_SETS.has(t.set)) grass.add(key);
+      if (PLANT_BLOCK_SETS.has(t.set)) blocked.add(key);
     }
+    // A cell is plantable iff it has grass AND nothing blocks it.
+    for (const k of grass) if (!blocked.has(k)) this.plantableCells.add(k);
   }
 
   // ── Ground (autotile terrain, 16 px source × scale 4 = 64 px display) ───
@@ -285,6 +324,9 @@ class GardenScene extends Phaser.Scene {
           const variants = GTILE[`${tn}${rn}${bn}${ln}`] ?? GTILE['1111'];
           const frame = variants[Math.floor(rng() * variants.length)];
           this.add.image(wx, wy, "ts-grass", frame).setScale(SC).setDepth(-2000);
+          // Procedural mode: any grass cell is plantable (trees added later
+          // will block individual cells via this.plantableCells.delete).
+          this.plantableCells.add(`${c},${r}`);
         } else if (type === DIRT) {
           this.add.image(wx, wy, "ts-dirt", 9).setScale(SC).setDepth(-1500);
         }
@@ -493,8 +535,17 @@ class GardenScene extends Phaser.Scene {
       const depth = wy + (maxDr + 1) * TW;
       def.forEach(([dc, dr, spCol, spRow]) => {
         const frame = spRow * SCOLS + spCol;
-        this.add.image(wx + dc * TW, wy + dr * TW, "ts-trees", frame)
+        const px = wx + dc * TW, py = wy + dr * TW;
+        this.add.image(px, py, "ts-trees", frame)
           .setScale(TSC).setOrigin(0, 0).setDepth(depth);
+        // Remove any 64px planting cells the tree's footprint overlaps.
+        const c0 = Math.floor(px / this.CELL);
+        const c1 = Math.floor((px + TW - 1) / this.CELL);
+        const r0 = Math.floor(py / this.CELL);
+        const r1 = Math.floor((py + TW - 1) / this.CELL);
+        for (let c = c0; c <= c1; c++)
+          for (let r = r0; r <= r1; r++)
+            this.plantableCells.delete(`${c},${r}`);
       });
     };
 
@@ -526,66 +577,210 @@ class GardenScene extends Phaser.Scene {
     const el = this.vpRef?.current;
     if (!el) return;
     const cam = this.cameras.main;
+    const z = cam.zoom || 1;
+    // Visible WORLD area shrinks as zoom increases. The minimap rectangle
+    // needs the world-space dimensions, not raw screen pixels.
     el.dispatchEvent(new CustomEvent("cam", {
       detail: {
         x: -cam.scrollX,
         y: -cam.scrollY,
-        vw: this.scale.gameSize.width,
-        vh: this.scale.gameSize.height,
+        vw: this.scale.gameSize.width  / z,
+        vh: this.scale.gameSize.height / z,
+        zoom: z,
       },
     }));
   }
 
-  // ── Input (drag + plant/select tap) ─────────────────────────────────────
+  // Set zoom while keeping the screen point (sx, sy) anchored to the same
+  // world point. Used by pinch + wheel + UI buttons.
+  _applyZoomAround(newZoom, sx, sy, anchorWorld) {
+    const cam = this.cameras.main;
+    cam.setZoom(newZoom);
+    // After zoom, recompute scroll so the anchor world point still maps to (sx, sy)
+    const vw = this.scale.gameSize.width;
+    const vh = this.scale.gameSize.height;
+    cam.setScroll(
+      anchorWorld.x - (sx - vw / 2) / newZoom - vw / 2,
+      anchorWorld.y - (sy - vh / 2) / newZoom - vh / 2,
+    );
+    this.emitCam();
+  }
+
+  // Public — zoom by a step factor anchored on the screen center. Called by
+  // the React +/− UI buttons.
+  zoomBy(factor) {
+    const cam = this.cameras.main;
+    const newZoom = Phaser.Math.Clamp(cam.zoom * factor, this.MIN_ZOOM, this.MAX_ZOOM);
+    if (newZoom === cam.zoom) return;
+    const vw = this.scale.gameSize.width;
+    const vh = this.scale.gameSize.height;
+    const sx = vw / 2, sy = vh / 2;
+    const anchorWorld = cam.getWorldPoint(sx, sy);
+    this._applyZoomAround(newZoom, sx, sy, anchorWorld);
+  }
+
+  // ── Input (drag + plant/select tap + pinch zoom) ────────────────────────
   setupInput() {
     const cam = this.cameras.main;
     this._drag = null;
     this._hasMoved = false;
+    this._pinch = null;            // { startDist, startZoom, anchorWorld }
+    this.MIN_ZOOM = 0.5;
+    this.MAX_ZOOM = 1.6;
+
+    // Default Phaser registers 1 pointer; bump to 2 for pinch-to-zoom.
+    this.input.addPointer(1);
+
+    // Convenience — count of currently-down active pointers
+    const downCount = () => {
+      const pointers = this.input.manager.pointers;
+      let n = 0;
+      for (const ptr of pointers) if (ptr && ptr.isDown && ptr.id !== 0) n++;
+      // Pointer at index 0 is the mouse; only count when its left button is down
+      const mouse = pointers[0];
+      if (mouse && mouse.isDown) n++;
+      return n;
+    };
+    const twoActivePointers = () => {
+      const ps = this.input.manager.pointers.filter(p => p && p.isDown);
+      return ps.length >= 2 ? [ps[0], ps[1]] : null;
+    };
 
     this.input.on("pointerdown", (p) => {
+      // If a second finger lands, switch from drag → pinch.
+      const pair = twoActivePointers();
+      if (pair) {
+        const dx = pair[0].x - pair[1].x;
+        const dy = pair[0].y - pair[1].y;
+        const startDist = Math.max(1, Math.hypot(dx, dy));
+        const midX = (pair[0].x + pair[1].x) / 2;
+        const midY = (pair[0].y + pair[1].y) / 2;
+        const anchorWorld = cam.getWorldPoint(midX, midY);
+        this._pinch = { startDist, startZoom: cam.zoom, anchorWorld };
+        this._drag = null;
+        this._hasMoved = true;       // suppress tap-to-plant while pinching
+        this.hideGridPreview();
+        return;
+      }
       this._drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY };
       this._hasMoved = false;
       this.plantClicked = false;
     });
 
+    // Tap-vs-drag threshold. iOS/Android touchscreens typically register
+    // 5–10 px of jitter on a "still" tap; 4 px was too tight and caused
+    // legitimate taps (e.g. tapping empty ground to dismiss the plant
+    // info card) to be classified as drags and silently dropped.
+    const TAP_THRESHOLD = 10;
+
     this.input.on("pointermove", (p) => {
+      // Live ghost-cell preview while in plant/move mode (independent of drag).
+      this.updateGridPreview(p);
+
+      // Pinch-zoom takes priority over single-finger pan.
+      if (this._pinch) {
+        const pair = twoActivePointers();
+        if (!pair) return;
+        const dx = pair[0].x - pair[1].x;
+        const dy = pair[0].y - pair[1].y;
+        const dist = Math.max(1, Math.hypot(dx, dy));
+        const targetZoom = this._pinch.startZoom * (dist / this._pinch.startDist);
+        const newZoom = Phaser.Math.Clamp(targetZoom, this.MIN_ZOOM, this.MAX_ZOOM);
+        // Keep the world point under the pinch midpoint stable as zoom changes.
+        const midX = (pair[0].x + pair[1].x) / 2;
+        const midY = (pair[0].y + pair[1].y) / 2;
+        this._applyZoomAround(newZoom, midX, midY, this._pinch.anchorWorld);
+        return;
+      }
       if (!this._drag) return;
       const dx = p.x - this._drag.x, dy = p.y - this._drag.y;
-      if (Math.hypot(dx, dy) > 4) this._hasMoved = true;
-      cam.setScroll(this._drag.sx - dx, this._drag.sy - dy);
+      if (Math.hypot(dx, dy) > TAP_THRESHOLD) this._hasMoved = true;
+      // Pan distance must be divided by zoom: a screen-pixel of finger
+      // movement corresponds to fewer world pixels when zoomed in.
+      const z = cam.zoom || 1;
+      cam.setScroll(this._drag.sx - dx / z, this._drag.sy - dy / z);
       this.emitCam();
     });
 
     this.input.on("pointerup", (p) => {
+      // End pinch as soon as one finger lifts. If the other finger is still
+      // down, snapshot a fresh drag anchor from it so panning resumes
+      // smoothly without jumping.
+      if (this._pinch) {
+        this._pinch = null;
+        const remaining = this.input.manager.pointers.find(pp => pp && pp.isDown && pp.id !== p.id);
+        if (remaining) {
+          this._drag = { x: remaining.x, y: remaining.y, sx: cam.scrollX, sy: cam.scrollY };
+        } else {
+          this._drag = null;
+        }
+        this._hasMoved = true;       // never trigger tap-to-plant after pinch
+        this.hideGridPreview();
+        return;
+      }
+
       const wasPlantClick = this.plantClicked;
       this.plantClicked = false;
       if (this._drag && !this._hasMoved && !wasPlantClick) {
-        const wx = p.x + cam.scrollX - 450;
-        const wy = p.y + cam.scrollY - 100;
-        if (this.propsRef.current.planting) {
-          this.callbacksRef.current.onPlantAt?.(wx, wy);
-        } else if (this.propsRef.current.moving) {
-          this.callbacksRef.current.onMoveTo?.(wx, wy);
+        // Use camera's getWorldPoint so it works regardless of zoom.
+        const wp = cam.getWorldPoint(p.x, p.y);
+        const wxP = wp.x;
+        const wyP = wp.y;
+        const isPlant = !!this.propsRef.current.planting;
+        const isMove  = !!this.propsRef.current.moving;
+        if (isPlant || isMove) {
+          const { col, row } = this.cellAt(wxP, wyP);
+          const excludeId = isMove ? this.propsRef.current.moving?.id : null;
+          if (this.canPlaceAt(col, row, excludeId)) {
+            const snapXP = col * this.CELL + this.CELL / 2;
+            const snapYP = row * this.CELL + this.CELL / 2;
+            const svgX = snapXP - 450;
+            const svgY = snapYP - 100;
+            if (isPlant) this.callbacksRef.current.onPlantAt?.(svgX, svgY);
+            else         this.callbacksRef.current.onMoveTo?.(svgX, svgY);
+          } else {
+            this.flashInvalidCell(col, row);
+          }
         } else {
           this.callbacksRef.current.setPressed?.(null);
         }
       }
       this._drag = null;
+      this.hideGridPreview();
     });
 
-    this.input.on("pointercancel", () => { this._drag = null; this._hasMoved = false; });
+    this.input.on("pointercancel", () => {
+      this._drag = null;
+      this._pinch = null;
+      this._hasMoved = false;
+    });
+
+    // Mouse wheel zoom (desktop). Anchors the zoom on the cursor so it
+    // feels like zooming "into" what you're hovering over.
+    this.input.on("wheel", (pointer, _objs, _dx, dy) => {
+      const factor = dy > 0 ? 0.9 : 1.1;
+      const newZoom = Phaser.Math.Clamp(cam.zoom * factor, this.MIN_ZOOM, this.MAX_ZOOM);
+      const anchorWorld = cam.getWorldPoint(pointer.x, pointer.y);
+      this._applyZoomAround(newZoom, pointer.x, pointer.y, anchorWorld);
+    });
 
     // Safety net: pointer events that end OUTSIDE the canvas (off-screen, on a
     // toast/banner that mounted mid-gesture, or after the user dragged onto a
     // sibling DOM element) never reach Phaser's canvas-bound pointerup. Without
     // this, `_drag` stays set and the next tap silently no-ops because the
     // pointerup branch early-returns thinking a drag is still active.
+    //
+    // IMPORTANT: skip this reset when the pointerup landed on the canvas — in
+    // that case Phaser's own scene-level handler will run on the next frame
+    // and needs `_drag` intact to fire onMoveTo / onPlantAt. We were clearing
+    // `_drag` too eagerly and stealing the legitimate event.
     this._windowPointerEnd = (e) => {
-      if (this._drag) {
-        this._drag = null;
-        this._hasMoved = false;
-        this.plantClicked = false;
-      }
+      if (!this._drag) return;
+      const canvas = this.game?.canvas;
+      if (canvas && (e.target === canvas || canvas.contains?.(e.target))) return;
+      this._drag = null;
+      this._hasMoved = false;
+      this.plantClicked = false;
     };
     window.addEventListener("pointerup", this._windowPointerEnd);
     window.addEventListener("pointercancel", this._windowPointerEnd);
@@ -595,15 +790,97 @@ class GardenScene extends Phaser.Scene {
     });
   }
 
+  // ── Physics: cell helpers + ghost preview + invalid feedback ─────────────
+  cellAt(wxP, wyP) {
+    return { col: Math.floor(wxP / this.CELL), row: Math.floor(wyP / this.CELL) };
+  }
+
+  cellCenterPhaser(col, row) {
+    return { x: col * this.CELL + this.CELL / 2, y: row * this.CELL + this.CELL / 2 };
+  }
+
+  // True iff the (col,row) cell is grass-only and currently free of any plant
+  // other than the one we're moving (excludeId). Used by both validation and
+  // the live ghost-cell color.
+  canPlaceAt(col, row, excludeId = null) {
+    const key = `${col},${row}`;
+    if (!this.plantableCells.has(key)) return false;
+    const occ = this.occupiedCells.get(key);
+    if (occ && occ !== excludeId) return false;
+    return true;
+  }
+
+  setupGridPreview() {
+    // Snapped 64×64 outline that follows the cursor in plant/move mode.
+    // Rectangles + outline are drawn via Graphics so we can recolor on the fly.
+    // Grid preview is a UI cue — must sit above plants so the cursor
+    // indicator never hides under one.
+    this._gridPreview = this.add.graphics().setDepth(this.PLANT_DEPTH_BASE + 5000).setVisible(false);
+  }
+
+  // Called from pointermove — draws/colors the cell highlight under the cursor.
+  // Keeps the cell hidden when not in plant/move mode and during a real drag
+  // (i.e. the user is panning, not aiming).
+  updateGridPreview(p) {
+    const props = this.propsRef.current;
+    const active = !!(props.planting || props.moving);
+    if (!active || this._hasMoved) { this.hideGridPreview(); return; }
+    const cam = this.cameras.main;
+    const wxP = p.x + cam.scrollX;
+    const wyP = p.y + cam.scrollY;
+    const { col, row } = this.cellAt(wxP, wyP);
+    const excludeId = props.moving?.id ?? null;
+    const ok = this.canPlaceAt(col, row, excludeId);
+    const { x, y } = this.cellCenterPhaser(col, row);
+    const g = this._gridPreview;
+    g.clear();
+    const fill   = ok ? 0x6ed27a : 0xd55a5a;
+    const stroke = ok ? 0x2b6534 : 0x7d2235;
+    g.fillStyle(fill, 0.28);
+    g.fillRect(x - this.CELL / 2 + 2, y - this.CELL / 2 + 2, this.CELL - 4, this.CELL - 4);
+    g.lineStyle(2.5, stroke, 0.95);
+    g.strokeRect(x - this.CELL / 2 + 2, y - this.CELL / 2 + 2, this.CELL - 4, this.CELL - 4);
+    g.setVisible(true);
+  }
+
+  hideGridPreview() {
+    if (this._gridPreview) this._gridPreview.setVisible(false);
+  }
+
+  // Brief red flash + shake on the cell the user tried to plant on but
+  // couldn't (water, path, tree, or already occupied).
+  flashInvalidCell(col, row) {
+    const { x, y } = this.cellCenterPhaser(col, row);
+    const r = this.add.rectangle(x, y, this.CELL - 4, this.CELL - 4, 0xd55a5a, 0.45)
+      .setStrokeStyle(3, 0x7d2235, 0.9)
+      .setDepth(this.PLANT_DEPTH_BASE + 5500);
+    this.tweens.add({
+      targets: r,
+      alpha: 0,
+      duration: 380,
+      ease: "Cubic.easeOut",
+      onComplete: () => r.destroy(),
+    });
+    // Tiny camera shake — universally readable as "no".
+    this.cameras.main.shake(120, 0.003);
+  }
+
   // Bridge: React dispatches a "reset-input" CustomEvent on .stage when an
   // overlay closes; we hook it up here so the scene resets cleanly.
+  // Also handles "zoom" events from the +/− UI buttons.
   setupExternalResetBridge() {
     const el = this.vpRef?.current;
     if (!el) return;
     this._resetHandler = () => this.resetInput();
+    this._zoomHandler = (e) => {
+      const f = e.detail?.factor;
+      if (typeof f === "number" && f > 0) this.zoomBy(f);
+    };
     el.addEventListener("reset-input", this._resetHandler);
+    el.addEventListener("zoom", this._zoomHandler);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       el.removeEventListener("reset-input", this._resetHandler);
+      el.removeEventListener("zoom", this._zoomHandler);
     });
   }
 
@@ -633,12 +910,57 @@ class GardenScene extends Phaser.Scene {
   updateFromProps({ plantedSeeds = [], pressed }) {
     this.plantLayer.removeAll(true);
 
-    const all = [...plantedSeeds].sort((a, b) => a.y - b.y);
+    // Rebuild occupancy from the current seeds — single source of truth so
+    // collision checks stay in sync with whatever React has decided to render.
+    this.occupiedCells.clear();
+    for (const f of plantedSeeds) {
+      const px = (f.x ?? 0) + 450;
+      const py = (f.y ?? 0) + 100;
+      const col = Math.floor(px / this.CELL);
+      const row = Math.floor(py / this.CELL);
+      this.occupiedCells.set(`${col},${row}`, f.id);
+    }
 
-    all.forEach(f => this.addPlant(f, pressed));
+    // Detect newly-added plants (drop animation) and stage advances (growth
+    // pop) by diffing against the previous render. Skip on the very first
+    // render so loading 50 existing plants doesn't trigger 50 drops.
+    //
+    // Note: planting first inserts a temp-id seed and then swaps it for the
+    // server-saved seed (different id, same word+position). To avoid playing
+    // the drop twice, also key the diff by word+cell so the swap is treated
+    // as the same plant.
+    const isFirstRender = !this._didFirstRender;
+    const transitions = new Map(); // id → { kind: "new" } | { kind: "grew", from, to }
+    const cellKey = (f) => {
+      const px = (f.x ?? 0) + 450;
+      const py = (f.y ?? 0) + 100;
+      const c = Math.floor(px / this.CELL);
+      const r = Math.floor(py / this.CELL);
+      return `${f.word}|${c},${r}`;
+    };
+    const prevByCell = new Map();
+    for (const prev of this.prevSeedById.values()) prevByCell.set(cellKey(prev), prev);
+
+    if (!isFirstRender) {
+      for (const f of plantedSeeds) {
+        const prev = this.prevSeedById.get(f.id) || prevByCell.get(cellKey(f));
+        if (!prev) {
+          transitions.set(f.id, { kind: "new" });
+        } else if ((f.stage ?? 0) > (prev.stage ?? 0)) {
+          transitions.set(f.id, { kind: "grew", from: prev.stage ?? 0, to: f.stage ?? 0 });
+        }
+      }
+    }
+
+    const all = [...plantedSeeds].sort((a, b) => a.y - b.y);
+    all.forEach(f => this.addPlant(f, pressed, transitions.get(f.id)));
+
+    // Snapshot for the next diff
+    this.prevSeedById = new Map(plantedSeeds.map(f => [f.id, { ...f }]));
+    this._didFirstRender = true;
   }
 
-  addPlant(f, pressed) {
+  addPlant(f, pressed, transition = null) {
     const { x: px, y: py } = SVG_TO_PH(f.x, f.y);
     const stage = f.stage ?? 4;
     const si    = strHash(f.word) % 100;
@@ -713,8 +1035,23 @@ class GardenScene extends Phaser.Scene {
       containerChildren.push(emojiTxt);
     }
 
-    // Container at base of plant — sway rotates around the pot bottom
-    const container = this.add.container(px, py, containerChildren).setDepth(py);
+    // Chat-bubble signal — visible from across the garden so the owner
+    // can spot which plants have unread notes from friends.
+    const hasNotes = (f.notes?.length ?? 0) > 0;
+    let bubbleTxt = null;
+    if (hasNotes) {
+      bubbleTxt = this.add.text(
+        0, wordY - 20,
+        "💬",
+        { fontSize: "16px", resolution: 2 }
+      ).setOrigin(0.5, 1);
+      containerChildren.push(bubbleTxt);
+    }
+
+    // Container at base of plant — sway rotates around the pot bottom.
+    // PLANT_DEPTH_BASE (10000) lifts plants above all world objects so they
+    // are never visually covered by trees, fences, or decorations.
+    const container = this.add.container(px, py, containerChildren).setDepth(this.PLANT_DEPTH_BASE + py);
 
     // Sway — uses the staggered values declared above
     this.tweens.add({
@@ -727,6 +1064,28 @@ class GardenScene extends Phaser.Scene {
       repeat: -1,
     });
 
+    // Chat bubble bobs gently to draw the eye, with a faint scale pulse to
+    // feel "alive". Animation targets the bubble's y/scale within the
+    // container's local space.
+    if (bubbleTxt) {
+      this.tweens.add({
+        targets: bubbleTxt,
+        y: bubbleTxt.y - 4,
+        duration: 900,
+        ease: "Sine.easeInOut",
+        yoyo: true,
+        repeat: -1,
+      });
+      this.tweens.add({
+        targets: bubbleTxt,
+        scale: { from: 1, to: 1.12 },
+        duration: 900,
+        ease: "Sine.easeInOut",
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+
     img.on("pointerup", (p, lx, ly, ev) => {
       ev.stopPropagation();
       this.plantClicked = true;
@@ -738,6 +1097,111 @@ class GardenScene extends Phaser.Scene {
     });
 
     this.plantLayer.add(container);
+
+    // ── Physics-y entry/grow effects ────────────────────────────────────
+    if (transition?.kind === "new") {
+      this.playPlantDropAnim(container, px, py);
+    } else if (transition?.kind === "grew") {
+      this.playGrowthPop(container, px, py);
+    }
+  }
+
+  // Drop the plant in from above with a squash-and-bounce, then puff a small
+  // ring of dust at the base. Reads as "the seed just hit the ground."
+  playPlantDropAnim(container, px, py) {
+    const baseY = py;
+    container.y = baseY - 70;
+    container.scaleX = 1.15;
+    container.scaleY = 0.7;
+    container.alpha  = 0.0;
+    this.tweens.add({
+      targets: container,
+      y: baseY,
+      alpha: 1,
+      duration: 240,
+      ease: "Cubic.easeIn",
+      onComplete: () => {
+        // Squash on impact …
+        this.tweens.add({
+          targets: container,
+          scaleX: 1.18, scaleY: 0.78,
+          duration: 90,
+          yoyo: true,
+          ease: "Sine.easeOut",
+          onComplete: () => {
+            // … then settle to natural scale with a tiny overshoot
+            this.tweens.add({
+              targets: container,
+              scaleX: 1, scaleY: 1,
+              duration: 220,
+              ease: "Back.easeOut",
+            });
+          },
+        });
+        this.spawnDustRing(px, baseY + 4);
+      },
+    });
+  }
+
+  // Quick scale-pop with a green confetti ring — fires when stage advances.
+  playGrowthPop(container, px, py) {
+    this.tweens.add({
+      targets: container,
+      scaleX: 1.18, scaleY: 1.18,
+      duration: 160,
+      ease: "Sine.easeOut",
+      yoyo: true,
+    });
+    this.spawnLeafBurst(px, py);
+  }
+
+  // Small ring of beige dust circles that fade out — for plant landing.
+  spawnDustRing(px, py) {
+    const N = 8;
+    for (let i = 0; i < N; i++) {
+      const angle = (i / N) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const dist  = 22 + Math.random() * 8;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist * 0.5;     // squashed: ground-plane perspective
+      const dot = this.add.circle(px, py, 3 + Math.random() * 1.5, 0xd9c79a, 0.75)
+        .setDepth(this.PLANT_DEPTH_BASE + py + 0.1);
+      this.fxLayer.add(dot);
+      this.tweens.add({
+        targets: dot,
+        x: px + dx, y: py + dy,
+        alpha: 0,
+        scale: 0.6,
+        duration: 380 + Math.random() * 120,
+        ease: "Cubic.easeOut",
+        onComplete: () => dot.destroy(),
+      });
+    }
+  }
+
+  // Green leaf-particles burst for stage-up. Emojis instead of circles to
+  // read clearly even at small sizes.
+  spawnLeafBurst(px, py) {
+    const EMOJI = ["✨", "🌿", "✨", "💚"];
+    const N = 6;
+    for (let i = 0; i < N; i++) {
+      const angle = -Math.PI / 2 + ((i / (N - 1)) - 0.5) * Math.PI * 0.9;
+      const speed = 38 + Math.random() * 18;
+      const dx = Math.cos(angle) * speed;
+      const dy = Math.sin(angle) * speed - 8;
+      const t  = this.add.text(px, py - 18, EMOJI[i % EMOJI.length], {
+        fontSize: "16px", resolution: 2,
+      }).setOrigin(0.5, 0.5).setDepth(this.PLANT_DEPTH_BASE + py + 0.2);
+      this.fxLayer.add(t);
+      this.tweens.add({
+        targets: t,
+        x: px + dx, y: py - 18 + dy,
+        alpha: 0,
+        scale: { from: 0.5, to: 1.1 },
+        duration: 620,
+        ease: "Cubic.easeOut",
+        onComplete: () => t.destroy(),
+      });
+    }
   }
 
   // ── Animals ───────────────────────────────────────────────────────────────
@@ -831,7 +1295,7 @@ class GardenScene extends Phaser.Scene {
     }
     if (g) {
       g.setScrollFactor(0);   // stay fixed in viewport
-      g.setDepth(5000);       // above everything
+      g.setDepth(this.PLANT_DEPTH_BASE + 4000);  // above plants — atmospheric overlay
     }
     return g;
   }

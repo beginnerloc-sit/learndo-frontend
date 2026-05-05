@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Users, Settings } from "lucide-react";
+import { Users, Settings, Plus, Minus } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GardenWorld, WORLD } from "../components/GardenWorld";
 import { QuizModal, buildQuiz } from "../components/QuizModal";
@@ -11,10 +11,17 @@ import { useCurrentUser } from "../hooks/useUser";
 import { useVocabulary, usePlantWord, useAdvanceWordStage, useHarvestPlant, useMovePlant } from "../hooks/useVocabulary";
 import { wordTheme } from "../utils/wordTheme";
 import { TOPIC_EMOJI } from "../utils/topics";
+import { DailyCheckinModal } from "../components/DailyCheckinModal";
+import { TutorialWalkthrough } from "../components/TutorialWalkthrough";
+import { completeTutorial } from "../api/users";
 
 export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard, onOpenSettings, pendingPlant, onClearPending }) {
   const { data: fetchedUser } = useCurrentUser();
-  const user = authUser ?? fetchedUser;
+  // Prefer fresh fetched data over the JWT-bundled snapshot, so toggles and
+  // refetches (collectionLocked, streak, harvest_count, etc.) take effect
+  // without requiring a re-login. Falls back to authUser on initial paint
+  // before /users/me completes.
+  const user = fetchedUser ?? authUser;
   const queryClient = useQueryClient();
   const plantWord    = usePlantWord();
   const advanceStage = useAdvanceWordStage();
@@ -52,13 +59,64 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
   const dragStateRef = useRef({ startX: 0, startY: 0, moved: false, hideTimer: null });
   const [seedError, setSeedError] = useState("");
   const [weather, setWeather] = useState(null);   // { type, label }
+  const [showDailyCheck, setShowDailyCheck] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
-  // Load garden plants from DB once
+  // First-login walkthrough — shown when the server says tutorial isn't done.
+  // Once the user finishes (or skips), persist completion so we never show
+  // it again on any device.
   useEffect(() => {
-    if (gardenPlants && !initialized.current) {
+    if (fetchedUser && !fetchedUser.tutorialCompleted) setShowTutorial(true);
+  }, [fetchedUser?.tutorialCompleted]);
+
+  const finishTutorial = useCallback(async () => {
+    setShowTutorial(false);
+    try {
+      await completeTutorial();
+      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
+    } catch { /* fail-soft — they'll see it again next visit */ }
+  }, [queryClient]);
+
+  // Show the daily check-in modal once per session, the first time we see
+  // streakCheck.firstToday=true for this user. sessionStorage gates it so a
+  // hot reload or a 5-min staleTime refetch doesn't reopen the modal.
+  useEffect(() => {
+    const sc = fetchedUser?.streakCheck;
+    if (!sc?.firstToday) return;
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const stamp = `learndo_daily_check_${fetchedUser.id}_${todayKey}`;
+    try {
+      if (sessionStorage.getItem(stamp)) return;
+      sessionStorage.setItem(stamp, "1");
+    } catch { /* sessionStorage unavailable — show anyway */ }
+    setShowDailyCheck(true);
+  }, [fetchedUser?.id, fetchedUser?.streakCheck?.firstToday]);
+
+  // Load garden plants from DB once, then merge subsequent refetches so
+  // friend reactions/notes appear without clobbering the user's local
+  // position/stage edits (planting, moving, watering are optimistic).
+  useEffect(() => {
+    if (!gardenPlants) return;
+    if (!initialized.current) {
       initialized.current = true;
       setPlantedSeeds(gardenPlants);
+      return;
     }
+    // Subsequent refetches: merge ONLY social fields (reactions, notes,
+    // gloss/example backfill). Position + stage stay local-authoritative.
+    const remoteByWord = new Map(gardenPlants.map(p => [p.word, p]));
+    setPlantedSeeds(prev => prev.map(p => {
+      const r = remoteByWord.get(p.word);
+      if (!r) return p;
+      return {
+        ...p,
+        reactions: r.reactions ?? p.reactions,
+        notes:     r.notes     ?? p.notes,
+        gloss:     p.gloss     ?? r.gloss,
+        ipa:       p.ipa       ?? r.ipa,
+        exampleSentence: p.exampleSentence ?? r.exampleSentence,
+      };
+    }));
   }, [gardenPlants]);
 
 
@@ -215,9 +273,16 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
 
   return (
     <div className="scene">
-      {/* Top bar */}
+      {/* Top bar — pills on the left, action icons on the right. Owner name
+          hangs separately below as a wooden sign so long names don't push
+          icons off-screen on narrow viewports. */}
       <div className="sky-bar">
-        <div className="pill"><span className="ic">🌸</span>{plantedSeeds.length}</div>
+        <div className="pill" title="Plants currently growing in your garden">
+          <span className="ic">🌱</span>{plantedSeeds.length}
+        </div>
+        <div className="pill streak" title={`${user?.streak ?? 0}-day streak`}>
+          <span className="ic">🔥</span>{user?.streak ?? 0}d
+        </div>
         {weather && (
           <div className="pill weather-pill" title={`Today's weather: ${weather.label}`}>
             {weather.label}
@@ -230,10 +295,17 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           </button>
         )}
         <div style={{ flex: 1 }} />
-        <div className="sign"><h1>{user?.name ?? "Garden"}'s Garden</h1></div>
-        <div style={{ flex: 1 }} />
         <button className="icon-btn" onClick={onVisit}><Users size={15} strokeWidth={2} /></button>
         <button className="icon-btn" onClick={onOpenSettings}><Settings size={15} strokeWidth={2} /></button>
+      </div>
+
+      {/* Hanging owner sign — sits below the top row, swaying gently */}
+      <div className="garden-sign-hang">
+        <span className="garden-sign-rope l" />
+        <span className="garden-sign-rope r" />
+        <div className="garden-sign-board">
+          <h1>{user?.name ?? "Garden"}'s Garden</h1>
+        </div>
       </div>
 
       {/* Pannable stage */}
@@ -298,7 +370,17 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           const uniqueReactions = pressedSeed.reactions?.length
             ? [...new Map(pressedSeed.reactions.map(r => [r.emoji, r])).values()]
             : [];
-          return (
+
+          // Notes side panel — rendered as a sibling next to the card.
+          // Prefer right side; flip to left if it would overflow the viewport.
+          const NOTES_W = 130, GAP = 8;
+          const vw = cam.vw || 360;
+          const rightEnd = screenX + cardHW + GAP + NOTES_W;
+          const notesOnLeft = rightEnd > vw - 8;
+          const notesLeft = notesOnLeft ? screenX - cardHW - GAP : screenX + cardHW + GAP;
+          const notes = pressedSeed.notes ?? [];
+
+          return (<>
             <div
               className={`word-card${flipBelow ? " below" : ""}`}
               style={{ left: screenX, top: screenY, "--lang-color": pressedSeed.langColor ?? "#5a9eb8", "--arrow-x": `${arrowOffset}px` }}
@@ -324,14 +406,17 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
               {pressedSeed.gloss && <div className="trans">{pressedSeed.gloss}</div>}
               {example && <div className="wc-example">"{example}"</div>}
               {uniqueReactions.length > 0 && (
-                <div className="wc-reactions">
-                  {uniqueReactions.map(r => (
-                    <span key={r.emoji} className="wc-reaction-pill" title={r.from_name}>
-                      <span className="wc-reaction-emoji">{r.emoji}</span>
-                      <span className="wc-reaction-from">from {r.from_name}</span>
-                    </span>
-                  ))}
-                </div>
+                <>
+                  <div className="wc-section-title">🎁 Gifts</div>
+                  <div className="wc-reactions">
+                    {uniqueReactions.map(r => (
+                      <span key={r.emoji} className="wc-reaction-pill" title={r.from_name}>
+                        <span className="wc-reaction-emoji">{r.emoji}</span>
+                        <span className="wc-reaction-from">from {r.from_name}</span>
+                      </span>
+                    ))}
+                  </div>
+                </>
               )}
               {canWater && (
                 <button
@@ -368,8 +453,40 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
                 ✋ MOVE
               </button>
             </div>
-          );
+            {notes.length > 0 && (
+              <div
+                className={`plant-notes-side${flipBelow ? " below" : ""} ${notesOnLeft ? "on-left" : "on-right"}`}
+                style={{ left: notesLeft, top: screenY }}
+              >
+                <div className="plant-notes-title">💬 Notes</div>
+                {notes.slice(0, 4).map((n, i) => (
+                  <div key={`${n.from_user_id}-${i}`} className="plant-note">
+                    <div className="plant-note-from">{n.from_name}</div>
+                    <div className="plant-note-text">"{n.text}"</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>);
         })()}
+      </div>
+
+      {/* Zoom controls — dispatches "zoom" events the Phaser scene listens for */}
+      <div className="zoom-controls">
+        <button
+          className="zoom-btn"
+          aria-label="Zoom in"
+          onClick={() => vpRef.current?.dispatchEvent(new CustomEvent("zoom", { detail: { factor: 1.18 } }))}
+        >
+          <Plus size={15} strokeWidth={2.5} />
+        </button>
+        <button
+          className="zoom-btn"
+          aria-label="Zoom out"
+          onClick={() => vpRef.current?.dispatchEvent(new CustomEvent("zoom", { detail: { factor: 1 / 1.18 } }))}
+        >
+          <Minus size={15} strokeWidth={2.5} />
+        </button>
       </div>
 
       {/* Minimap — only visible while panning */}
@@ -499,6 +616,16 @@ export function GardenScreen({ user: authUser, onLesson, onVisit, onLeaderboard,
           onClose={() => { setWaterQuiz(null); setWatering(null); }}
           onWin={handleWaterWin}
         />
+      )}
+      {showDailyCheck && (
+        <DailyCheckinModal
+          streak={fetchedUser?.streakCheck?.streak ?? user?.streak ?? 1}
+          wasConsecutive={!!fetchedUser?.streakCheck?.wasConsecutive}
+          onClose={() => setShowDailyCheck(false)}
+        />
+      )}
+      {showTutorial && (
+        <TutorialWalkthrough onComplete={finishTutorial} />
       )}
     </div>
   );

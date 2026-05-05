@@ -14,6 +14,11 @@ export function useVocabulary(userId) {
     queryFn: () => fetchVocabulary(uid),
     enabled: !!uid,
     staleTime: 60 * 1000,
+    // Refetch every ~2.5 min so reactions/notes from friends appear without
+    // a manual reload. Background refetches only — won't disturb a tab that
+    // isn't focused.
+    refetchInterval: 150 * 1000,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -58,6 +63,9 @@ export function useHarvestPlant() {
       queryClient.invalidateQueries({ queryKey: ["vocabulary"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["collection"] });
+      // Refresh the current user so plants_count drops in sync everywhere
+      // that reads it (e.g. FriendsScreen self-rendering, future dashboards).
+      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
     },
   });
 }

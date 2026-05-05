@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, Search, UserPlus, UserCheck, Clock, Trash2, Trophy, Check, X } from "lucide-react";
+import { ChevronLeft, Search, UserPlus, UserCheck, Clock, Trash2, Trophy, Check, X, Shuffle } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchFriends, searchUsers, removeFriend,
   sendFriendRequest, fetchIncomingRequests, fetchOutgoingRequests,
-  acceptFriendRequest, declineFriendRequest,
+  acceptFriendRequest, declineFriendRequest, fetchFriendSuggestions,
 } from "../api/users";
 
 export function FriendsScreen({ onClose, onVisit, onLeaderboard }) {
@@ -27,6 +27,14 @@ export function FriendsScreen({ onClose, onVisit, onLeaderboard }) {
     enabled:  debounced.length > 0,
     staleTime: 10000,
   });
+  // Random non-friend suggestions — refetched whenever the user opens the
+  // screen so the strip feels lively, plus a Shuffle button for re-rolls.
+  const { data: suggestions = [], refetch: reshuffleSuggestions, isFetching: suggesting } = useQuery({
+    queryKey: ["friendSuggestions"],
+    queryFn:  () => fetchFriendSuggestions(5),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
 
   const friendIds   = useMemo(() => new Set(friends.map(f => f.id)),         [friends]);
   const incomingMap = useMemo(() => new Map(incoming.map(r => [r.user.id, r])), [incoming]);
@@ -36,6 +44,9 @@ export function FriendsScreen({ onClose, onVisit, onLeaderboard }) {
     qc.invalidateQueries({ queryKey: ["friends"]  });
     qc.invalidateQueries({ queryKey: ["frInbox"]  });
     qc.invalidateQueries({ queryKey: ["frOutbox"] });
+    // Refresh suggestions too — sending a request should remove that user
+    // from the list (server-side filter), and accepting moves them to friends.
+    qc.invalidateQueries({ queryKey: ["friendSuggestions"] });
   };
 
   const handleSend = async (user) => {
@@ -158,6 +169,30 @@ export function FriendsScreen({ onClose, onVisit, onLeaderboard }) {
           </section>
         )}
 
+        {/* ── Suggested gardeners (random non-friends) ── */}
+        {!debounced && suggestions.length > 0 && (
+          <section className="friends-section">
+            <h3 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span>✨ Suggested gardeners</span>
+              <button
+                className="friend-shuffle"
+                onClick={() => reshuffleSuggestions()}
+                disabled={suggesting}
+                title="Shuffle suggestions"
+              >
+                <Shuffle size={11} strokeWidth={2.5} />
+              </button>
+            </h3>
+            {suggestions.map(u => (
+              <FriendRow
+                key={u.id} user={u}
+                rightSlot={actionFor(u)}
+                onClickName={() => friendIds.has(u.id) && onVisit(u)}
+              />
+            ))}
+          </section>
+        )}
+
         {/* ── My friends ── */}
         {!debounced && (
           <section className="friends-section">
@@ -197,7 +232,7 @@ function FriendRow({ user, rightSlot, onClickName }) {
       </button>
       <button className="friend-info" onClick={onClickName}>
         <div className="friend-name">{user.name}</div>
-        <div className="friend-meta">🔥 {user.streak}d · 🌸 {user.plantsCount ?? 0} plants</div>
+        <div className="friend-meta">🔥 {user.streak}d · 🌸 {user.harvestCount ?? 0} harvested</div>
       </button>
       {rightSlot}
     </div>

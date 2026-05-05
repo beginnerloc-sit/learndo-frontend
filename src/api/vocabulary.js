@@ -60,6 +60,7 @@ export function normPlant(p) {
     level: p.level || null,
     topic: p.topic || null,
     reactions: p.reactions || [],
+    notes:    p.notes     || [],
     giftedBy: p.gifted_by || null,
     giftedByName: p.gifted_by_name || null,
   };

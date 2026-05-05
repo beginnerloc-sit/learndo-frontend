@@ -62,11 +62,17 @@ export function BreedingLab({ onClose, onPlantNewWord }) {
   const slot1Ref = useRef(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ["collection-lab"],
+    // Prefix with "collection" so React Query's partial-match invalidation
+    // from useHarvestPlant (which invalidates ["collection"]) also refreshes
+    // this list — otherwise newly harvested words wouldn't appear here.
+    queryKey: ["collection", "lab"],
     queryFn:  ({ pageParam = 0 }) => fetchCollection({ skip: pageParam, limit: PAGE_SIZE }),
     getNextPageParam: (last, all) =>
       last.length === PAGE_SIZE ? all.reduce((n, p) => n + p.length, 0) : undefined,
     staleTime: 30_000,
+    // When the lab is reopened, force a fresh fetch even if cached data is
+    // still within staleTime — guarantees the user sees their newest harvests.
+    refetchOnMount: "always",
   });
   const items = data?.pages.flat() ?? [];
   const slotIds = new Set(slots.filter(Boolean).map(s => s.id));
@@ -323,7 +329,9 @@ const Slot = React.forwardRef(({ index, item, hover, onClear }, ref) => {
     <div ref={ref} className={`lab-slot${item ? " filled" : ""}${hover ? " hover" : ""}`}>
       {item ? (
         <>
-          <button className="lab-slot-clear" onClick={onClear} title="Remove">×</button>
+          <button className="lab-slot-clear" onClick={onClear} title="Remove">
+            <X size={12} strokeWidth={3} />
+          </button>
           <img
             className="lab-slot-img"
             src={`/assets/${spriteFor(item.word, item.level)}.png`}
