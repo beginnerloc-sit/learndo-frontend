@@ -574,6 +574,25 @@ class GardenScene extends Phaser.Scene {
     });
 
     this.input.on("pointercancel", () => { this._drag = null; this._hasMoved = false; });
+
+    // Safety net: pointer events that end OUTSIDE the canvas (off-screen, on a
+    // toast/banner that mounted mid-gesture, or after the user dragged onto a
+    // sibling DOM element) never reach Phaser's canvas-bound pointerup. Without
+    // this, `_drag` stays set and the next tap silently no-ops because the
+    // pointerup branch early-returns thinking a drag is still active.
+    this._windowPointerEnd = (e) => {
+      if (this._drag) {
+        this._drag = null;
+        this._hasMoved = false;
+        this.plantClicked = false;
+      }
+    };
+    window.addEventListener("pointerup", this._windowPointerEnd);
+    window.addEventListener("pointercancel", this._windowPointerEnd);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener("pointerup", this._windowPointerEnd);
+      window.removeEventListener("pointercancel", this._windowPointerEnd);
+    });
   }
 
   // Bridge: React dispatches a "reset-input" CustomEvent on .stage when an
